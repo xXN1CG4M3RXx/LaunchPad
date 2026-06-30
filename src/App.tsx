@@ -35,10 +35,11 @@ function App() {
   useEffect(() => {
     let unlistenLog: (() => void) | null = null;
     let unlistenStopped: (() => void) | null = null;
+    let isDestroyed = false;
 
     const setupGlobalListeners = async () => {
       try {
-        unlistenLog = await listen<{ project_path: string; text: string }>(
+        const uLog = await listen<{ project_path: string; text: string }>(
           "project-log",
           (event) => {
             const { project_path, text } = event.payload;
@@ -56,7 +57,13 @@ function App() {
           }
         );
 
-        unlistenStopped = await listen<{ project_path: string; exit_code: number }>(
+        if (isDestroyed) {
+          uLog();
+        } else {
+          unlistenLog = uLog;
+        }
+
+        const uStopped = await listen<{ project_path: string; exit_code: number }>(
           "project-stopped",
           (event) => {
             const { project_path } = event.payload;
@@ -66,6 +73,12 @@ function App() {
             }));
           }
         );
+
+        if (isDestroyed) {
+          uStopped();
+        } else {
+          unlistenStopped = uStopped;
+        }
       } catch (e) {
         console.error("Fehler beim Einrichten der globalen Event-Listener:", e);
       }
@@ -89,6 +102,7 @@ function App() {
     loadConfig();
 
     return () => {
+      isDestroyed = true;
       // Clean up global event listeners on unmount
       if (unlistenLog) unlistenLog();
       if (unlistenStopped) unlistenStopped();
