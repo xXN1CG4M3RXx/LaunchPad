@@ -1,10 +1,11 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { 
   ChevronLeft, Play, Square, Code, Folder, 
-  Terminal, Trash2, Copy, GitBranch, AlertCircle, CheckCircle2, RefreshCw
+  Terminal, Trash2, Copy, GitBranch, AlertCircle, CheckCircle2, RefreshCw, Globe
 } from "lucide-react";
 import { ProjectInfo, AppConfig, GitDetails } from "../types";
 import { invoke } from "@tauri-apps/api/core";
+import { stripAnsi } from "../utils";
 
 interface ProjectDetailsProps {
   project: ProjectInfo;
@@ -63,6 +64,30 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
     }
   }, [logs, autoScroll]);
 
+  // Scan logs for localhost URL to support opening in browser
+  const detectedUrl = useMemo(() => {
+    const urlRegex = /(https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]):\d+)/i;
+    for (const line of logs) {
+      const cleanLine = stripAnsi(line);
+      const match = cleanLine.match(urlRegex);
+      if (match) {
+        // Normalize 0.0.0.0 to localhost so Windows can open it correctly
+        return match[1].replace("0.0.0.0", "localhost");
+      }
+    }
+    return null;
+  }, [logs]);
+
+  const handleOpenBrowser = async () => {
+    if (detectedUrl) {
+      try {
+        await invoke("open_in_browser", { url: detectedUrl });
+      } catch (e) {
+        console.error("Failed to open browser:", e);
+      }
+    }
+  };
+
   const activeCommand = config.projects[project.path]?.custom_command || project.default_command;
 
   const handleEditCommand = () => {
@@ -104,7 +129,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
   };
 
   const copyToClipboard = () => {
-    const text = logs.join("\n");
+    const text = logs.map(l => stripAnsi(l)).join("\n");
     navigator.clipboard.writeText(text);
     setCopiedLogs(true);
     setTimeout(() => setCopiedLogs(false), 2000);
@@ -124,6 +149,16 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
         </button>
 
         <div className="flex space-x-2">
+          {detectedUrl && (
+            <button
+              onClick={handleOpenBrowser}
+              className="flex items-center space-x-2 px-3 py-2 bg-brand-50 hover:bg-brand-100 dark:bg-brand-950/20 dark:hover:bg-brand-950/40 text-brand-700 dark:text-brand-400 rounded-lg border border-brand-200 dark:border-brand-900/50 text-xs font-semibold shadow-sm transition-all"
+              title="Im Standardbrowser öffnen"
+            >
+              <Globe className="w-4 h-4" />
+              <span>Browser</span>
+            </button>
+          )}
           <button
             onClick={handleOpenIDE}
             className="flex items-center space-x-2 px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold shadow-sm transition-all"
@@ -167,21 +202,32 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
             {/* Location */}
             <div className="space-y-1.5">
               <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Pfad</span>
-              <p className="text-xs text-slate-600 dark:text-slate-300 font-mono bg-slate-50 dark:bg-slate-950/60 p-2.5 rounded-lg border border-slate-100 dark:border-slate-900 select-all overflow-x-auto whitespace-nowrap scrollbar-thin">
+              <p className="text-xs text-slate-600 dark:text-slate-300 font-mono bg-slate-50 dark:bg-slate-950/40 p-2.5 rounded-lg border border-slate-100 dark:border-slate-900 select-all overflow-x-auto whitespace-nowrap scrollbar-thin">
                 {project.path}
               </p>
             </div>
 
             {/* Run Button controls */}
-            <div className="pt-2">
+            <div className="pt-2 space-y-3">
               {isRunning ? (
-                <button
-                  onClick={() => onStop(project.path)}
-                  className="w-full flex items-center justify-center space-x-2 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-all active:scale-[0.98]"
-                >
-                  <Square className="w-4.5 h-4.5" />
-                  <span>Prozess Stoppen</span>
-                </button>
+                <>
+                  <button
+                    onClick={() => onStop(project.path)}
+                    className="w-full flex items-center justify-center space-x-2 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-all active:scale-[0.98]"
+                  >
+                    <Square className="w-4.5 h-4.5" />
+                    <span>Prozess Stoppen</span>
+                  </button>
+                  {detectedUrl && (
+                    <button
+                      onClick={handleOpenBrowser}
+                      className="w-full flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-md transition-all active:scale-[0.98] animate-pulse"
+                    >
+                      <Globe className="w-4.5 h-4.5" />
+                      <span>Browser öffnen</span>
+                    </button>
+                  )}
+                </>
               ) : (
                 <button
                   onClick={() => onStart(project.path, activeCommand)}
@@ -348,7 +394,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
           {/* Console Output Area */}
           <div className="flex-1 overflow-y-auto p-6 font-mono text-xs leading-relaxed space-y-1 select-text scrollbar-thin scrollbar-track-slate-950 scrollbar-thumb-slate-800">
             {logs.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-slate-600 space-y-2">
+              <div className="h-full flex flex-col items-center justify-center text-slate-500 space-y-2">
                 <div className="p-2.5 bg-slate-900 rounded-full border border-slate-800 text-slate-500">
                   <Terminal className="w-5 h-5" />
                 </div>
@@ -357,20 +403,21 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
               </div>
             ) : (
               logs.map((log, index) => {
-                let textClass = "text-slate-300";
-                if (log.toLowerCase().includes("error") || log.toLowerCase().includes("failed") || log.startsWith("[Prozess mit Code") || log.startsWith("[Process exited")) {
+                const cleanLog = stripAnsi(log);
+                let textClass = "text-slate-350";
+                if (cleanLog.toLowerCase().includes("error") || cleanLog.toLowerCase().includes("failed") || cleanLog.startsWith("[Prozess mit Code") || cleanLog.startsWith("[Process exited")) {
                   textClass = "text-rose-400";
-                } else if (log.toLowerCase().includes("warning") || log.toLowerCase().includes("warn")) {
+                } else if (cleanLog.toLowerCase().includes("warning") || cleanLog.toLowerCase().includes("warn")) {
                   textClass = "text-amber-400";
-                } else if (log.toLowerCase().includes("success") || log.toLowerCase().includes("compiled successfully")) {
+                } else if (cleanLog.toLowerCase().includes("success") || cleanLog.toLowerCase().includes("compiled successfully") || cleanLog.toLowerCase().includes("ready in")) {
                   textClass = "text-emerald-400";
-                } else if (log.startsWith("> ")) {
+                } else if (cleanLog.startsWith("> ")) {
                   textClass = "text-brand-400 font-semibold";
                 }
 
                 return (
                   <div key={index} className={`whitespace-pre-wrap ${textClass}`}>
-                    {log}
+                    {cleanLog}
                   </div>
                 );
               })

@@ -313,6 +313,7 @@ function App() {
               <Dashboard
                 projects={projects}
                 runningProjects={runningProjects}
+                projectLogs={projectLogs}
                 config={config}
                 onSaveConfig={handleSaveConfig}
                 onStartProject={handleStartProject}

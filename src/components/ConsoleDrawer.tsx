@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { X, Trash2, Square, ChevronsDown } from "lucide-react";
+import { stripAnsi } from "../utils";
 
 interface ConsoleDrawerProps {
   isOpen: boolean;
@@ -110,21 +111,21 @@ export const ConsoleDrawer: React.FC<ConsoleDrawerProps> = ({
             </div>
           ) : (
             logs.map((log, index) => {
-              // Custom coloring for errors or info
+              const cleanLog = stripAnsi(log);
               let textClass = "text-slate-300";
-              if (log.toLowerCase().includes("error") || log.toLowerCase().includes("failed") || log.startsWith("[Prozess mit Code") || log.startsWith("[Process exited")) {
+              if (cleanLog.toLowerCase().includes("error") || cleanLog.toLowerCase().includes("failed") || cleanLog.startsWith("[Prozess mit Code") || cleanLog.startsWith("[Process exited")) {
                 textClass = "text-rose-400";
-              } else if (log.toLowerCase().includes("warning") || log.toLowerCase().includes("warn")) {
+              } else if (cleanLog.toLowerCase().includes("warning") || cleanLog.toLowerCase().includes("warn")) {
                 textClass = "text-amber-400";
-              } else if (log.toLowerCase().includes("success") || log.toLowerCase().includes("compiled successfully")) {
+              } else if (cleanLog.toLowerCase().includes("success") || cleanLog.toLowerCase().includes("compiled successfully")) {
                 textClass = "text-emerald-400";
-              } else if (log.startsWith("> ")) {
+              } else if (cleanLog.startsWith("> ")) {
                 textClass = "text-brand-400 font-semibold";
               }
 
               return (
                 <div key={index} className={`whitespace-pre-wrap ${textClass}`}>
-                  {log}
+                  {cleanLog}
                 </div>
               );
             })

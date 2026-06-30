@@ -1,14 +1,16 @@
 import React, { useState, useMemo } from "react";
 import {
   Search, Play, Square, Terminal,
-  Folder, Pin, RefreshCw, FolderSearch, Code, Eye
+  Folder, Pin, RefreshCw, FolderSearch, Code, Eye, Globe
 } from "lucide-react";
 import { ProjectInfo, AppConfig } from "../types";
 import { invoke } from "@tauri-apps/api/core";
+import { stripAnsi } from "../utils";
 
 interface DashboardProps {
   projects: ProjectInfo[];
   runningProjects: Record<string, boolean>;
+  projectLogs: Record<string, string[]>;
   config: AppConfig;
   onSaveConfig: (newConfig: AppConfig) => void;
   onStartProject: (projectPath: string, command: string) => void;
@@ -22,6 +24,7 @@ interface DashboardProps {
 export const Dashboard: React.FC<DashboardProps> = ({
   projects,
   runningProjects,
+  projectLogs,
   config,
   onSaveConfig,
   onStartProject,
@@ -50,6 +53,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
       await invoke("open_in_explorer", { projectPath: path });
     } catch (e) {
       console.error("Failed to open Explorer:", e);
+    }
+  };
+
+  const handleOpenBrowser = async (url: string) => {
+    try {
+      await invoke("open_in_browser", { url });
+    } catch (e) {
+      console.error("Failed to open browser:", e);
     }
   };
 
@@ -237,6 +248,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 const isEditing = editingCommand === project.path;
                 const typeStyle = getProjectTypeStyles(project.project_type);
 
+                const logs = projectLogs[project.path] || [];
+                let detectedUrl: string | null = null;
+                const urlRegex = /(https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]):\d+)/i;
+                for (const line of logs) {
+                  const cleanLine = stripAnsi(line);
+                  const match = cleanLine.match(urlRegex);
+                  if (match) {
+                    detectedUrl = match[1].replace("0.0.0.0", "localhost");
+                    break;
+                  }
+                }
+
                 return (
                   <div
                     key={project.path}
@@ -368,14 +391,26 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
                         {/* Run Toggle */}
                         {isRunning ? (
-                          <button
-                            onClick={() => onStopProject(project.path)}
-                            className="flex items-center space-x-1 px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg shadow-md transition-colors active:scale-95"
-                            title="Prozess stoppen"
-                          >
-                            <Square className="w-3.5 h-3.5" />
-                            <span>Stoppen</span>
-                          </button>
+                          <div className="flex space-x-1.5">
+                            {detectedUrl && (
+                              <button
+                                onClick={() => handleOpenBrowser(detectedUrl!)}
+                                className="flex items-center space-x-1 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-md transition-all active:scale-95 animate-pulse flex-row"
+                                title="Im Browser öffnen"
+                              >
+                                <Globe className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Browser</span>
+                              </button>
+                            )}
+                            <button
+                              onClick={() => onStopProject(project.path)}
+                              className="flex items-center space-x-1 px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg shadow-md transition-colors active:scale-95"
+                              title="Prozess stoppen"
+                            >
+                              <Square className="w-3.5 h-3.5" />
+                              <span>Stoppen</span>
+                            </button>
+                          </div>
                         ) : (
                           <button
                             onClick={() => onStartProject(project.path, activeCommand)}

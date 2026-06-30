@@ -441,6 +441,21 @@ fn get_git_details(project_path: String) -> GitDetails {
 }
 
 #[tauri::command]
+fn open_in_browser(url: String) -> Result<(), String> {
+    let mut cmd = std::process::Command::new("cmd");
+    cmd.args(&["/C", "start", &url]);
+    
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+    
+    cmd.spawn().map_err(|e| format!("Fehler beim Öffnen des Browsers: {}", e))?;
+    Ok(())
+}
+
+#[tauri::command]
 fn get_system_info() -> SystemInfo {
     let get_ver = |cmd_name: &str, arg: &str| -> Option<String> {
         let mut cmd = std::process::Command::new("cmd");
@@ -489,7 +504,8 @@ pub fn run() {
             open_in_ide,
             open_in_explorer,
             get_system_info,
-            get_git_details
+            get_git_details,
+            open_in_browser
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
