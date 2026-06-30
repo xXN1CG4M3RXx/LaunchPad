@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { Rocket, FolderKanban, Settings as SettingsIcon, Terminal } from "lucide-react";
@@ -31,11 +31,48 @@ function App() {
   const [consoleOpen, setConsoleOpen] = useState(false);
   const [consoleProject, setConsoleProject] = useState<ProjectInfo | null>(null);
 
-  // Store unlisteners for Tauri events to prevent leaks
-  const unlisteners = useRef<Record<string, () => void>>({});
-
-  // 1. Load config on startup and bind theme class
+  // 1. Load config on startup and bind global event listeners
   useEffect(() => {
+    let unlistenLog: (() => void) | null = null;
+    let unlistenStopped: (() => void) | null = null;
+
+    const setupGlobalListeners = async () => {
+      try {
+        unlistenLog = await listen<{ project_path: string; text: string }>(
+          "project-log",
+          (event) => {
+            const { project_path, text } = event.payload;
+            setProjectLogs((prev) => {
+              const currentLogs = prev[project_path] || [];
+              const newLogs = [...currentLogs, text];
+              if (newLogs.length > 2000) {
+                newLogs.shift();
+              }
+              return {
+                ...prev,
+                [project_path]: newLogs,
+              };
+            });
+          }
+        );
+
+        unlistenStopped = await listen<{ project_path: string; exit_code: number }>(
+          "project-stopped",
+          (event) => {
+            const { project_path } = event.payload;
+            setRunningProjects((prev) => ({
+              ...prev,
+              [project_path]: false,
+            }));
+          }
+        );
+      } catch (e) {
+        console.error("Fehler beim Einrichten der globalen Event-Listener:", e);
+      }
+    };
+
+    setupGlobalListeners();
+
     const loadConfig = async () => {
       try {
         const loadedConfig = await invoke<AppConfig>("get_config");
@@ -52,8 +89,9 @@ function App() {
     loadConfig();
 
     return () => {
-      // Clean up all event listeners on unmount
-      Object.values(unlisteners.current).forEach((unlistenFn) => unlistenFn());
+      // Clean up global event listeners on unmount
+      if (unlistenLog) unlistenLog();
+      if (unlistenStopped) unlistenStopped();
     };
   }, []);
 
@@ -66,52 +104,6 @@ function App() {
       document.documentElement.classList.remove("dark");
     }
   }, [config.theme]);
-
-  // 2. Set up event listeners for scanned projects
-  useEffect(() => {
-    projects.forEach((p) => {
-      setupProjectListeners(p.path);
-    });
-  }, [projects]);
-
-  const setupProjectListeners = async (projectPath: string) => {
-    // If listeners already exist, do nothing
-    if (unlisteners.current[projectPath]) return;
-
-    const logEventName = `project-log:${projectPath}`;
-    const stoppedEventName = `project-stopped:${projectPath}`;
-
-    try {
-      const unlistenLog = await listen<string>(logEventName, (event) => {
-        setProjectLogs((prev) => {
-          const currentLogs = prev[projectPath] || [];
-          // Limit logs buffer size to prevent memory issues
-          const newLogs = [...currentLogs, event.payload];
-          if (newLogs.length > 2000) {
-            newLogs.shift();
-          }
-          return {
-            ...prev,
-            [projectPath]: newLogs,
-          };
-        });
-      });
-
-      const unlistenStopped = await listen<number | null>(stoppedEventName, () => {
-        setRunningProjects((prev) => ({
-          ...prev,
-          [projectPath]: false,
-        }));
-      });
-
-      unlisteners.current[projectPath] = () => {
-        unlistenLog();
-        unlistenStopped();
-      };
-    } catch (e) {
-      console.error(`Fehler beim Abonnieren von Events für ${projectPath}:`, e);
-    }
-  };
 
   // 3. Scan projects
   const scanProjects = async (dir: string, depth: number) => {

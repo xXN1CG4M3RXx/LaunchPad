@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { 
-  Search, Play, Square, Terminal, 
+import {
+  Search, Play, Square, Terminal,
   Folder, Pin, RefreshCw, FolderSearch, Code, Eye
 } from "lucide-react";
 import { ProjectInfo, AppConfig } from "../types";
@@ -76,7 +76,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const saveCustomCommand = (path: string) => {
     const projectConf = config.projects[path] || { custom_command: null, is_pinned: false };
     const cleanCommand = tempCommandValue.trim();
-    
+
     const updatedProjects = {
       ...config.projects,
       [path]: {
@@ -84,7 +84,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         custom_command: cleanCommand || null,
       },
     };
-    
+
     onSaveConfig({
       ...config,
       projects: updatedProjects,
@@ -118,31 +118,31 @@ export const Dashboard: React.FC<DashboardProps> = ({
     switch (type) {
       case "Node":
         return {
-          bg: "bg-emerald-55/60 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/50",
+          bg: "bg-emerald-500/10 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-500/20",
           dot: "bg-emerald-500",
           label: "Node.js"
         };
       case "Rust":
         return {
-          bg: "bg-orange-55/60 dark:bg-orange-950/20 text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-900/50",
+          bg: "bg-orange-500/10 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 border border-orange-200/50 dark:border-orange-500/20",
           dot: "bg-orange-500",
           label: "Rust"
         };
       case "Go":
         return {
-          bg: "bg-cyan-55/60 dark:bg-cyan-950/20 text-cyan-700 dark:text-cyan-400 border-cyan-200 dark:border-cyan-900/50",
+          bg: "bg-cyan-500/10 dark:bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border border-cyan-200/50 dark:border-cyan-500/20",
           dot: "bg-cyan-500",
           label: "Go"
         };
       case "Python":
         return {
-          bg: "bg-blue-55/60 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-900/50",
+          bg: "bg-blue-500/10 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200/50 dark:border-blue-500/20",
           dot: "bg-blue-500",
           label: "Python"
         };
       default:
         return {
-          bg: "bg-slate-50 dark:bg-slate-950/50 text-slate-700 dark:text-slate-400 border-slate-200 dark:border-slate-800/80",
+          bg: "bg-slate-500/10 dark:bg-slate-500/10 text-slate-700 dark:text-slate-400 border border-slate-200/50 dark:border-slate-500/20",
           dot: "bg-slate-500",
           label: "Generisch"
         };
@@ -151,7 +151,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      
+
       {/* Top action row */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -181,7 +181,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 placeholder="Projekt suchen..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 rounded-lg outline-none focus:bg-white dark:focus:bg-slate-950 focus:border-brand-450 dark:focus:border-brand-850 focus:ring-1 focus:ring-brand-400 dark:focus:ring-brand-800 transition-all text-slate-700 dark:text-slate-200"
+                className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg outline-none focus:bg-white dark:focus:bg-slate-950 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-slate-700 dark:text-slate-200"
               />
             </div>
 
@@ -192,26 +192,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <button
                   key={type}
                   onClick={() => setFilterType(type)}
-                  className={`px-3 py-1.5 rounded-lg font-medium border transition-colors ${
-                    filterType === type 
+                  className={`px-3 py-1.5 rounded-lg font-medium border transition-colors ${filterType === type
                       ? 'bg-brand-600 border-brand-600 text-white shadow-sm'
                       : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-                  }`}
+                    }`}
                 >
                   {type === "All" ? "Alle" : type === "Generic" ? "Generisch" : type}
                 </button>
               ))}
 
-              <div className="h-6 w-px bg-slate-250 dark:bg-slate-850 mx-2 hidden sm:block"></div>
+              <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-2 hidden sm:block"></div>
 
               {/* Status filter Toggle */}
               <button
                 onClick={() => setShowRunningOnly(!showRunningOnly)}
-                className={`px-3 py-1.5 rounded-lg font-medium border transition-colors flex items-center space-x-1.5 ${
-                  showRunningOnly 
+                className={`px-3 py-1.5 rounded-lg font-medium border transition-colors flex items-center space-x-1.5 ${showRunningOnly
                     ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
                     : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-                }`}
+                  }`}
               >
                 <span className={`w-2 h-2 rounded-full ${showRunningOnly ? 'bg-white animate-pulse' : 'bg-emerald-500'}`}></span>
                 <span>Nur laufende</span>
@@ -240,15 +238,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 const typeStyle = getProjectTypeStyles(project.project_type);
 
                 return (
-                  <div 
+                  <div
                     key={project.path}
-                    className={`bg-white dark:bg-slate-900 rounded-xl border transition-all duration-300 flex flex-col shadow-sm relative group ${
-                      isRunning 
-                        ? 'border-emerald-300 dark:border-emerald-800 ring-2 ring-emerald-100 dark:ring-emerald-950/60 shadow-emerald-50 dark:shadow-emerald-950/10' 
+                    className={`bg-white dark:bg-slate-900 rounded-xl border transition-all duration-300 flex flex-col shadow-sm relative group ${isRunning
+                        ? 'border-emerald-300 dark:border-emerald-800 ring-2 ring-emerald-100 dark:ring-emerald-950/60 shadow-emerald-50 dark:shadow-emerald-950/10'
                         : 'border-brand-200/60 dark:border-slate-800 hover:border-brand-300 dark:hover:border-slate-750 hover:shadow-md hover:translate-y-[-2px]'
-                    }`}
+                      }`}
                   >
-                    
+
                     {/* Running Glow Indicator */}
                     {isRunning && (
                       <span className="absolute -top-1 -left-1 w-3.5 h-3.5 rounded-full bg-emerald-500 ring-4 ring-emerald-100 dark:ring-emerald-950 animate-pulse"></span>
@@ -265,7 +262,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                           <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase border ${typeStyle.bg}`}>
                             {typeStyle.label}
                           </span>
-                          
+
                           {/* Git Branch Badge */}
                           {project.git_branch && (
                             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 text-slate-550 dark:text-slate-400 font-mono">
@@ -284,11 +281,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       {/* Pin Button */}
                       <button
                         onClick={() => togglePin(project.path)}
-                        className={`p-1.5 rounded-lg border transition-all active:scale-95 ${
-                          isPinned 
-                            ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900 text-amber-500 hover:bg-amber-100' 
+                        className={`p-1.5 rounded-lg border transition-all active:scale-95 ${isPinned
+                            ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900 text-amber-500 hover:bg-amber-100'
                             : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 hover:text-slate-650 hover:bg-slate-50 dark:hover:bg-slate-800'
-                        }`}
+                          }`}
                         title={isPinned ? "Vom Dashboard lospinnen" : "Favorisieren / Oben anpinnen"}
                       >
                         <Pin className={`w-3.5 h-3.5 ${isPinned ? 'fill-amber-400' : ''}`} />
@@ -319,7 +315,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                           </button>
                         </div>
                       ) : (
-                        <div 
+                        <div
                           onClick={() => startEditing(project.path, activeCommand)}
                           className="flex items-center justify-between text-xs font-mono bg-slate-100 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-850 hover:border-brand-200 dark:hover:border-slate-700 hover:bg-white dark:hover:bg-slate-900 text-slate-655 dark:text-slate-350 rounded px-2.5 py-1.5 cursor-pointer transition-all group-hover:bg-slate-50/40"
                           title="Klicken zum Ändern"
@@ -329,21 +325,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         </div>
                       )}
                     </div>
-
                     {/* Card Actions Bottom */}
                     <div className="px-5 py-4 bg-slate-50/30 dark:bg-slate-950/10 rounded-b-xl flex items-center justify-between gap-4 mt-auto">
                       {/* Left: Shell / IDE Shortcut actions */}
                       <div className="flex items-center space-x-1.5">
                         <button
                           onClick={() => handleOpenIDE(project.path)}
-                          className="p-2 bg-white dark:bg-slate-850 hover:bg-brand-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-450 hover:text-brand-600 dark:hover:text-brand-400 rounded-lg border border-slate-200 dark:border-slate-800 transition-colors shadow-sm"
+                          className="p-2 bg-slate-50 dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-355 hover:text-brand-600 dark:hover:text-brand-400 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors shadow-sm"
                           title="In VS Code öffnen"
                         >
                           <Code className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleOpenExplorer(project.path)}
-                          className="p-2 bg-white dark:bg-slate-850 hover:bg-brand-50 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-450 hover:text-brand-600 dark:hover:text-brand-400 rounded-lg border border-slate-200 dark:border-slate-800 transition-colors shadow-sm"
+                          className="p-2 bg-slate-50 dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-355 hover:text-brand-600 dark:hover:text-brand-400 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors shadow-sm"
                           title="Im Explorer anzeigen"
                         >
                           <Folder className="w-4 h-4" />
@@ -355,7 +350,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         {/* Details View Toggle */}
                         <button
                           onClick={() => onSelectProject(project)}
-                          className="flex items-center space-x-1 px-3 py-2 bg-white dark:bg-slate-850 hover:bg-brand-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 hover:border-brand-200 dark:hover:border-brand-700 text-slate-600 dark:text-slate-300 hover:text-brand-700 dark:hover:text-brand-400 text-xs font-semibold rounded-lg shadow-sm transition-colors active:scale-95"
+                          className="flex items-center space-x-1 px-3 py-2 bg-slate-50 dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 hover:border-brand-200 dark:hover:border-brand-700 text-slate-600 dark:text-slate-300 hover:text-brand-700 dark:hover:text-brand-400 text-xs font-semibold rounded-lg shadow-sm transition-colors active:scale-95"
                           title="Details & Konsole anzeigen"
                         >
                           <Eye className="w-3.5 h-3.5" />
@@ -365,7 +360,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         {/* Quick drawer log viewer icon */}
                         <button
                           onClick={() => onOpenConsole(project)}
-                          className="p-2 bg-white dark:bg-slate-850 hover:bg-brand-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-350 hover:text-brand-700 dark:hover:text-brand-405 rounded-lg shadow-sm transition-colors"
+                          className="p-2 bg-slate-50 dark:bg-slate-800 hover:bg-brand-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-550 dark:text-slate-300 hover:text-brand-700 dark:hover:text-brand-400 rounded-lg shadow-sm transition-colors"
                           title="Quick-Log Drawer öffnen"
                         >
                           <Terminal className="w-3.5 h-3.5" />

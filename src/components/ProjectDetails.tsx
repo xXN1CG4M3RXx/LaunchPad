@@ -126,7 +126,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
         <div className="flex space-x-2">
           <button
             onClick={handleOpenIDE}
-            className="flex items-center space-x-2 px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 rounded-lg border border-slate-200 dark:border-slate-750 text-xs font-semibold shadow-sm transition-all"
+            className="flex items-center space-x-2 px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold shadow-sm transition-all"
             title="In VS Code öffnen"
           >
             <Code className="w-4 h-4" />
@@ -134,7 +134,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
           </button>
           <button
             onClick={handleOpenExplorer}
-            className="flex items-center space-x-2 px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 text-slate-700 dark:text-slate-200 rounded-lg border border-slate-200 dark:border-slate-750 text-xs font-semibold shadow-sm transition-all"
+            className="flex items-center space-x-2 px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-semibold shadow-sm transition-all"
             title="Im Explorer anzeigen"
           >
             <Folder className="w-4 h-4" />
@@ -349,7 +349,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
           <div className="flex-1 overflow-y-auto p-6 font-mono text-xs leading-relaxed space-y-1 select-text scrollbar-thin scrollbar-track-slate-950 scrollbar-thumb-slate-800">
             {logs.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-slate-600 space-y-2">
-                <div className="p-2.5 bg-slate-900 rounded-full border border-slate-850 text-slate-500">
+                <div className="p-2.5 bg-slate-900 rounded-full border border-slate-800 text-slate-500">
                   <Terminal className="w-5 h-5" />
                 </div>
                 <p className="text-[11px]">Keine Programmausgaben gestreamt.</p>

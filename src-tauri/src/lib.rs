@@ -224,6 +224,18 @@ fn scan_projects(dev_dir: String, scan_depth: Option<usize>) -> Result<Vec<Proje
     Ok(projects)
 }
 
+#[derive(Clone, Serialize)]
+struct LogPayload {
+    project_path: String,
+    text: String,
+}
+
+#[derive(Clone, Serialize)]
+struct StoppedPayload {
+    project_path: String,
+    exit_code: i32,
+}
+
 #[tauri::command]
 fn start_project(
     app_handle: tauri::AppHandle,
@@ -235,7 +247,10 @@ fn start_project(
     if let Some(pid) = running.get(&project_path) {
         kill_process_tree(*pid);
         running.remove(&project_path);
-        let _ = app_handle.emit(&format!("project-stopped:{}", project_path), ());
+        let _ = app_handle.emit("project-stopped", StoppedPayload {
+            project_path: project_path.clone(),
+            exit_code: -1,
+        });
     }
 
     let mut cmd = std::process::Command::new("cmd");
@@ -269,8 +284,10 @@ fn start_project(
         std::thread::spawn(move || {
             for line in stdout_reader.lines() {
                 if let Ok(l) = line {
-                    let event_name = format!("project-log:{}", stdout_path_for_thread);
-                    let _ = stdout_app_handle.emit(&event_name, l);
+                    let _ = stdout_app_handle.emit("project-log", LogPayload {
+                        project_path: stdout_path_for_thread.clone(),
+                        text: l,
+                    });
                 }
             }
         });
@@ -282,8 +299,10 @@ fn start_project(
         std::thread::spawn(move || {
             for line in stderr_reader.lines() {
                 if let Ok(l) = line {
-                    let event_name = format!("project-log:{}", stderr_path_for_thread);
-                    let _ = stderr_app_handle.emit(&event_name, l);
+                    let _ = stderr_app_handle.emit("project-log", LogPayload {
+                        project_path: stderr_path_for_thread.clone(),
+                        text: l,
+                    });
                 }
             }
         });
@@ -302,11 +321,15 @@ fn start_project(
             Err(_) => -1,
         };
 
-        let stop_event = format!("project-stopped:{}", stdout_path);
-        let _ = app_handle_clone.emit(&stop_event, code);
+        let _ = app_handle_clone.emit("project-stopped", StoppedPayload {
+            project_path: stdout_path.clone(),
+            exit_code: code,
+        });
         
-        let log_event = format!("project-log:{}", stdout_path);
-        let _ = app_handle_clone.emit(&log_event, format!("\n[Prozess mit Code {} beendet]", code));
+        let _ = app_handle_clone.emit("project-log", LogPayload {
+            project_path: stdout_path.clone(),
+            text: format!("\n[Prozess mit Code {} beendet]", code),
+        });
     });
 
     Ok(())
