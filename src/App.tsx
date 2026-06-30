@@ -242,10 +242,10 @@ function App() {
           >
             <div className="flex items-center space-x-3">
               <FolderKanban className="w-4.5 h-4.5" />
-              <span>Projekte</span>
+              <span>Projects</span>
             </div>
             {runningCount > 0 && (
-              <span className={`inline-flex items-center justify-center w-5.5 h-5.5 text-[10px] font-bold rounded-full ${
+              <span className={`inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold rounded-full shrink-0 ${
                 activeTab === "dashboard" ? "bg-white text-brand-700" : "bg-emerald-500 text-white animate-pulse"
               }`}>
                 {runningCount}
@@ -262,7 +262,7 @@ function App() {
             }`}
           >
             <SettingsIcon className="w-4.5 h-4.5" />
-            <span>Einstellungen</span>
+            <span>Settings</span>
           </button>
         </nav>
 
@@ -272,7 +272,7 @@ function App() {
             <div className="flex items-center justify-between text-xs text-slate-500 mb-2">
               <div className="flex items-center space-x-1.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span className="font-semibold text-slate-400">Aktivitäten laufen</span>
+                <span className="font-semibold text-slate-400">Active Processes</span>
               </div>
             </div>
             <button
@@ -287,7 +287,7 @@ function App() {
               className="w-full flex items-center justify-center space-x-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 px-3 rounded-lg border border-slate-700 text-xs transition-colors"
             >
               <Terminal className="w-3.5 h-3.5" />
-              <span>Letzte Konsole öffnen</span>
+              <span>Open Latest Console</span>
             </button>
           </div>
         )}

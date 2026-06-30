@@ -49,7 +49,7 @@ export const ConsoleDrawer: React.FC<ConsoleDrawerProps> = ({
             <span className={`w-3 h-3 rounded-full ${isRunning ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`}></span>
             <div>
               <h2 className="text-lg font-semibold tracking-tight text-white flex items-center gap-2">
-                Konsole: {projectName}
+                Console: {projectName}
               </h2>
               <p className="text-xs text-slate-400 font-mono select-all mt-0.5">{projectPath}</p>
             </div>
@@ -81,19 +81,19 @@ export const ConsoleDrawer: React.FC<ConsoleDrawerProps> = ({
             <button
               onClick={onClear}
               className="flex items-center space-x-1.5 px-3 py-1.5 text-xs text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg border border-slate-800 transition-colors"
-              title="Konsole leeren"
+              title="Clear console"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              <span>Leeren</span>
+              <span>Clear</span>
             </button>
             {isRunning && (
               <button
                 onClick={onStop}
                 className="flex items-center space-x-1.5 px-3 py-1.5 text-xs text-rose-400 hover:text-rose-100 hover:bg-rose-950/40 rounded-lg border border-rose-900/50 transition-colors"
-                title="Prozess stoppen"
+                title="Stop process"
               >
                 <Square className="w-3.5 h-3.5" />
-                <span>Stoppen</span>
+                <span>Stop</span>
               </button>
             )}
           </div>
@@ -106,8 +106,8 @@ export const ConsoleDrawer: React.FC<ConsoleDrawerProps> = ({
               <div className="p-3 bg-slate-900 rounded-full text-slate-600 border border-slate-800/40">
                 <ChevronsDown className="w-6 h-6 animate-bounce" />
               </div>
-              <p className="text-xs">Noch keine Konsolenausgaben vorhanden.</p>
-              <p className="text-[10px] opacity-75">Drücke oben auf Starten, um Logs zu sehen.</p>
+              <p className="text-xs">No console output logged yet.</p>
+              <p className="text-[10px] opacity-75">Click "Start" on the card to see logs.</p>
             </div>
           ) : (
             logs.map((log, index) => {
