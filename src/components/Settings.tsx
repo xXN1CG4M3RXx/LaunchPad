@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { FolderOpen, Sliders, Cpu, AlertTriangle, RefreshCw, Moon } from "lucide-react";
+import { FolderOpen, Sliders, Cpu, AlertTriangle, RefreshCw, Moon, Check } from "lucide-react";
 import { AppConfig, SystemInfo } from "../types";
 import { invoke } from "@tauri-apps/api/core";
 
@@ -251,21 +251,21 @@ export const Settings: React.FC<SettingsProps> = ({ config, onSaveConfig }) => {
             </div>
 
             <div className="space-y-4">
-              <div className="flex flex-col p-3 bg-white dark:bg-slate-905/30 rounded-lg border border-slate-100 dark:border-white/5">
+              <div className="flex flex-col p-3 bg-slate-50 dark:bg-slate-950/40 rounded-lg border border-slate-100 dark:border-white/5">
                 <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">Node.js</span>
                 <span className="text-sm font-mono text-slate-750 dark:text-slate-300 mt-1 truncate">
                   {systemInfo?.node_version || (loadingSysInfo ? "Checking..." : "Not installed")}
                 </span>
               </div>
 
-              <div className="flex flex-col p-3 bg-white dark:bg-slate-905/30 rounded-lg border border-slate-100 dark:border-white/5">
+              <div className="flex flex-col p-3 bg-slate-50 dark:bg-slate-950/40 rounded-lg border border-slate-100 dark:border-white/5">
                 <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">Rust / Cargo</span>
                 <span className="text-sm font-mono text-slate-750 dark:text-slate-300 mt-1 truncate">
                   {systemInfo?.cargo_version || (loadingSysInfo ? "Checking..." : "Not installed")}
                 </span>
               </div>
 
-              <div className="flex flex-col p-3 bg-white dark:bg-slate-905/30 rounded-lg border border-slate-100 dark:border-white/5">
+              <div className="flex flex-col p-3 bg-slate-50 dark:bg-slate-950/40 rounded-lg border border-slate-100 dark:border-white/5">
                 <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">Git Version</span>
                 <span className="text-sm font-mono text-slate-750 dark:text-slate-300 mt-1 truncate">
                   {systemInfo?.git_version || (loadingSysInfo ? "Checking..." : "Not installed")}
@@ -283,8 +283,9 @@ export const Settings: React.FC<SettingsProps> = ({ config, onSaveConfig }) => {
 
       {/* Floating Save Toast notification */}
       {saveSuccess && (
-        <div className="fixed bottom-6 right-6 bg-brand-600 text-white text-sm font-bold px-4 py-2.5 rounded-lg shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-300 z-50">
-          Settings Saved
+        <div className="fixed bottom-6 right-6 bg-brand-600 text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-xl shadow-brand-500/10 border border-brand-500/20 animate-toast z-50 flex items-center space-x-2">
+          <Check className="w-4 h-4 text-white animate-in zoom-in-50 duration-200" />
+          <span>Settings Saved</span>
         </div>
       )}
 
