@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1024" height="1024" viewBox="0 0 1024 1024"
+     xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0d0b1e"/>
+      <stop offset="100%" stop-color="#12102a"/>
+    </linearGradient>
+    <linearGradient id="bodyGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#c084fc"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="noseGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f3e8ff"/>
+      <stop offset="100%" stop-color="#a855f7"/>
+    </linearGradient>
+    <linearGradient id="finGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#6d28d9"/>
+      <stop offset="100%" stop-color="#3b0764"/>
+    </linearGradient>
+    <radialGradient id="flameGrad" cx="50%" cy="20%" r="80%">
+      <stop offset="0%"   stop-color="#fef08a" stop-opacity="1"/>
+      <stop offset="30%"  stop-color="#fbbf24" stop-opacity="0.95"/>
+      <stop offset="65%"  stop-color="#f97316" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#ef4444" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowGrad" cx="50%" cy="58%" r="50%">
+      <stop offset="0%"   stop-color="#7c3aed" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="winGrad" cx="32%" cy="32%" r="68%">
+      <stop offset="0%"   stop-color="#e0f2fe"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </radialGradient>
+    <linearGradient id="sheenGrad" x1="0" y1="0" x2="0.6" y2="0.6">
+      <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="clip">
+      <rect width="1024" height="1024" rx="224" ry="224"/>
+    </clipPath>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="22" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="flameBlur">
+      <feGaussianBlur stdDeviation="14"/>
+    </filter>
+    <filter id="shadow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="10" stdDeviation="22"
+                    flood-color="#4c1d95" flood-opacity="0.65"/>
+    </filter>
+  </defs>
+
+  <g clip-path="url(#clip)">
+    <!-- Background -->
+    <rect width="1024" height="1024" fill="url(#bgGrad)"/>
+
+    <!-- Ambient glow behind rocket -->
+    <ellipse cx="512" cy="560" rx="340" ry="300" fill="url(#glowGrad)"/>
+
+    <!-- ── Rocket group: centred at 512,490, tilted 16° ─────────── -->
+    <g transform="translate(512,490) rotate(16)">
+
+      <!-- Exhaust flame (behind everything) -->
+      <ellipse cx="0" cy="258" rx="68" ry="105"
+               fill="url(#flameGrad)" filter="url(#flameBlur)"/>
+      <!-- Inner bright core -->
+      <ellipse cx="0" cy="242" rx="24" ry="36"
+               fill="#fef9c3" opacity="0.88" filter="url(#flameBlur)"/>
+
+      <!-- Fins (drawn before body so body covers overlap) -->
+      <!-- Left fin -->
+      <polygon points="-68,160 -130,260 -68,220"
+               fill="url(#finGrad)" opacity="0.95"/>
+      <!-- Right fin -->
+      <polygon points="68,160 130,260 68,220"
+               fill="url(#finGrad)" opacity="0.95"/>
+
+      <!-- Nozzle -->
+      <ellipse cx="0" cy="210" rx="52" ry="20" fill="#3b0764"/>
+
+      <!-- Body rect with rounded corners -->
+      <rect x="-68" y="-60" width="136" height="270" rx="34"
+            fill="url(#bodyGrad)" filter="url(#shadow)"/>
+
+      <!-- Subtle highlight stripe (left side of body) -->
+      <rect x="-50" y="-55" width="32" height="260" rx="14"
+            fill="#ffffff" opacity="0.09"/>
+
+      <!-- Nose cone -->
+      <polygon points="0,-230 -70,-58 70,-58"
+               fill="url(#noseGrad)" filter="url(#shadow)"/>
+
+      <!-- Nose-body seam -->
+      <rect x="-68" y="-62" width="136" height="12" rx="6"
+            fill="#a855f7" opacity="0.6"/>
+
+      <!-- Porthole window -->
+      <circle cx="0" cy="60" r="38" fill="#0f0a25"/>
+      <circle cx="0" cy="60" r="29" fill="url(#winGrad)"/>
+      <!-- Window glare -->
+      <ellipse cx="-10" cy="50" rx="11" ry="7"
+               fill="#ffffff" opacity="0.60"
+               transform="rotate(-25,-10,50)"/>
+    </g>
+
+    <!-- Top sheen overlay -->
+    <rect width="1024" height="1024" fill="url(#sheenGrad)" rx="224"/>
+  </g>
+</svg>
