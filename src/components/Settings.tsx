@@ -95,7 +95,7 @@ export const Settings: React.FC<SettingsProps> = ({ config, onSaveConfig }) => {
       
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-black text-slate-800 dark:text-white uppercase tracking-tight">Settings</h1>
+        <h1 className="text-4xl font-black uppercase tracking-tight"><span className="gradient-text font-display">Settings</span></h1>
         <p className="text-sm text-slate-500 dark:text-slate-450 mt-0.5 font-sans">Configure LaunchPad behavior and manage directories.</p>
       </div>
 
@@ -105,7 +105,8 @@ export const Settings: React.FC<SettingsProps> = ({ config, onSaveConfig }) => {
         <div className="lg:col-span-2 space-y-6">
           
           {/* Dev Directory Config Card */}
-          <div className="bg-white dark:bg-slate-900/30 rounded-xl border border-slate-205 dark:border-white/5 p-6 shadow-sm">
+          <div className="bg-white dark:bg-slate-900/30 rounded-xl border border-slate-205 dark:border-white/5 p-6 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-[2px] brand-gradient-bg"></div>
             <div className="flex items-center space-x-3 mb-4">
               <div className="p-2 bg-brand-50 dark:bg-brand-950/20 rounded-lg text-brand-650 dark:text-brand-400">
                 <FolderOpen className="w-5 h-5" />
@@ -135,7 +136,8 @@ export const Settings: React.FC<SettingsProps> = ({ config, onSaveConfig }) => {
           </div>
 
           {/* Theme Selector Card */}
-          <div className="bg-white dark:bg-slate-900/30 rounded-xl border border-slate-205 dark:border-white/5 p-6 shadow-sm">
+          <div className="bg-white dark:bg-slate-900/30 rounded-xl border border-slate-205 dark:border-white/5 p-6 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-[2px] brand-gradient-bg"></div>
             <div className="flex items-center space-x-3 mb-4">
               <div className="p-2 bg-brand-50 dark:bg-brand-950/20 rounded-lg text-brand-650 dark:text-brand-400">
                 <Moon className="w-5 h-5" />
@@ -172,7 +174,8 @@ export const Settings: React.FC<SettingsProps> = ({ config, onSaveConfig }) => {
           </div>
 
           {/* Scanner Config Card */}
-          <div className="bg-white dark:bg-slate-900/30 rounded-xl border border-slate-205 dark:border-white/5 p-6 shadow-sm">
+          <div className="bg-white dark:bg-slate-900/30 rounded-xl border border-slate-205 dark:border-white/5 p-6 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-[2px] brand-gradient-bg"></div>
             <div className="flex items-center space-x-3 mb-4">
               <div className="p-2 bg-brand-50 dark:bg-brand-950/20 rounded-lg text-brand-650 dark:text-brand-400">
                 <Sliders className="w-5 h-5" />
@@ -205,7 +208,8 @@ export const Settings: React.FC<SettingsProps> = ({ config, onSaveConfig }) => {
           </div>
 
           {/* Reset / Danger Zone Card */}
-          <div className="bg-white dark:bg-slate-900/30 border border-rose-200 dark:border-rose-900/40 p-6 rounded-xl shadow-sm">
+          <div className="bg-white dark:bg-slate-900/30 border border-rose-200 dark:border-rose-900/40 p-6 rounded-xl shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-rose-500"></div>
             <div className="flex items-center space-x-3 mb-4 text-rose-700 dark:text-rose-400">
               <div className="p-2 bg-rose-50 dark:bg-rose-950/20 rounded-lg text-rose-600 dark:text-rose-455">
                 <AlertTriangle className="w-5 h-5" />
@@ -229,7 +233,8 @@ export const Settings: React.FC<SettingsProps> = ({ config, onSaveConfig }) => {
 
         {/* Right Panel: System Information */}
         <div className="space-y-6">
-          <div className="bg-slate-50 dark:bg-slate-900/20 rounded-xl border border-slate-200 dark:border-white/5 p-6">
+          <div className="bg-slate-50 dark:bg-slate-900/20 rounded-xl border border-slate-200 dark:border-white/5 p-6 relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-[2px] brand-gradient-bg"></div>
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-2 text-slate-700 dark:text-slate-200 font-bold uppercase text-sm tracking-wider">
                 <Cpu className="w-5 h-5 text-slate-500 dark:text-slate-400" />

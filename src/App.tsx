@@ -221,13 +221,14 @@ function App() {
     <div className="flex h-screen w-screen bg-brand-50 dark:bg-slate-950 overflow-hidden font-sans text-slate-700 dark:text-slate-200 select-none transition-colors duration-300">
       
       {/* Sidebar navigation */}
-      <aside className="w-64 bg-slate-900 dark:bg-slate-950 border-r border-slate-800 dark:border-slate-900 flex flex-col shrink-0">
+      <aside className="w-64 bg-slate-900 dark:bg-slate-955 border-r border-slate-800 dark:border-slate-900 flex flex-col shrink-0">
         {/* Sidebar Brand header */}
-        <div className="h-16 px-6 border-b border-slate-800 flex items-center space-x-3 bg-slate-950/40">
+        <div className="h-16 px-6 border-b border-slate-850 flex items-center space-x-3 bg-slate-950/40 relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-[2px] brand-gradient-bg"></div>
           <div className="p-1.5 bg-brand-500 rounded-lg text-white">
             <Rocket className="w-5 h-5" />
           </div>
-          <span className="text-white font-extrabold text-lg tracking-wider">LaunchPad</span>
+          <span className="gradient-text font-black text-xl tracking-wider font-display">LaunchPad</span>
         </div>
 
         {/* Sidebar Navigation Options */}

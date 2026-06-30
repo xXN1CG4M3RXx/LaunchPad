@@ -182,7 +182,8 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
         
         {/* Left Column: Project Stats and Configurations */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white dark:bg-slate-900/30 rounded-xl border border-slate-200 dark:border-white/5 p-6 shadow-sm space-y-6">
+          <div className="bg-white dark:bg-slate-900/30 rounded-xl border border-slate-200 dark:border-white/5 p-6 shadow-sm space-y-6 relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-[3px] brand-gradient-bg"></div>
             
             {/* Title / Description info block */}
             <div>
@@ -240,7 +241,8 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
           </div>
 
           {/* Config Settings Card */}
-          <div className="bg-white dark:bg-slate-900/30 rounded-xl border border-slate-200 dark:border-white/5 p-6 shadow-sm space-y-4">
+          <div className="bg-white dark:bg-slate-900/30 rounded-xl border border-slate-200 dark:border-white/5 p-6 shadow-sm space-y-4 relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-[2px] brand-gradient-bg"></div>
             <h3 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider">Execution Settings</h3>
             
             <div className="space-y-2">
@@ -286,7 +288,8 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
           </div>
 
           {/* Git Inspection Details Card */}
-          <div className="bg-white dark:bg-slate-900/30 rounded-xl border border-slate-200 dark:border-white/5 p-6 shadow-sm space-y-4">
+          <div className="bg-white dark:bg-slate-900/30 rounded-xl border border-slate-200 dark:border-white/5 p-6 shadow-sm space-y-4 relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-[2px] brand-gradient-bg"></div>
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
                 <GitBranch className="w-4 h-4 text-slate-400" />
@@ -350,7 +353,8 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
         </div>
 
         {/* Right Column: Embedded Console Log Output */}
-        <div className="lg:col-span-3 flex flex-col h-[600px] lg:h-auto bg-slate-950 rounded-xl border border-slate-900 text-slate-100 overflow-hidden shadow-sm">
+        <div className="lg:col-span-3 flex flex-col h-[600px] lg:h-auto bg-slate-950 rounded-xl border border-slate-900 text-slate-100 overflow-hidden shadow-sm relative">
+          <div className="absolute top-0 left-0 right-0 h-[3px] brand-gradient-bg"></div>
           
           {/* Console Header */}
           <div className="flex items-center justify-between px-6 py-4 bg-slate-900 border-b border-slate-900">

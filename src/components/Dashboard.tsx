@@ -163,7 +163,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* Top action row */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-800 dark:text-white uppercase tracking-tight">Projects</h1>
+          <h1 className="text-4xl font-black uppercase tracking-tight"><span className="gradient-text font-display">Projects</span></h1>
           <p className="text-sm text-slate-500 dark:text-slate-450 mt-0.5">Manage and run your local development servers.</p>
         </div>
 
@@ -262,11 +262,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 return (
                   <div
                     key={project.path}
-                    className={`bg-white dark:bg-slate-900/30 rounded-xl border transition-all duration-300 flex flex-col shadow-sm relative group hover-scale ${isRunning
-                        ? 'border-emerald-300 dark:border-emerald-800/80 ring-1 ring-emerald-100 dark:ring-emerald-950/30 shadow-emerald-50 dark:shadow-emerald-950/5'
-                        : 'border-slate-200 dark:border-white/5'
+                    className={`bg-white dark:bg-slate-900/30 rounded-xl border border-slate-205 dark:border-white/5 transition-all duration-300 flex flex-col shadow-sm relative overflow-hidden group hover-scale ${isRunning
+                        ? 'ring-1 ring-emerald-500/30'
+                        : ''
                       }`}
                   >
+                    <div className="absolute top-0 left-0 right-0 h-[3px] brand-gradient-bg"></div>
 
                     {/* Running Indicator Dot */}
                     {isRunning && (
