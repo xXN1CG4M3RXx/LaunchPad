@@ -128,31 +128,58 @@ export const Dashboard: React.FC<DashboardProps> = ({
         return {
           bg: "bg-emerald-500/10 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20",
           dot: "bg-emerald-500",
-          label: "Node.js"
+          label: "Node.js",
+          icon: (
+            <svg className="w-3.5 h-3.5 mr-1 shrink-0 rounded-[2px]" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M0 0h24v24H0V0zm22.034 18.376c-.186-.77-.83-1.43-1.64-1.841-.855-.425-2.019-.69-3.292-.78-.77-.05-1.46-.109-2.072-.272-.278-.076-.425-.21-.425-.455 0-.315.244-.506.761-.506.553 0 .895.203 1.024.629h2.905c-.149-1.374-1.253-2.217-2.91-2.217-1.9 0-3.084 1.011-3.084 2.634 0 1.59 1.198 2.236 2.905 2.46.786.1 1.693.189 2.418.349.356.076.554.24.554.526 0 .341-.326.568-.895.568-.697 0-1.13-.292-1.303-.802h-2.984c.247 1.612 1.568 2.378 3.267 2.378 2.23 0 3.637-1.138 3.637-2.774 0-1.748-1.077-2.3-2.965-2.559zm-14.218-.79c.142.562.661.987 1.343.987.756 0 1.132-.423 1.132-1.2v-7.142h2.977v7.26c0 2.23-1.365 3.39-3.799 3.39-2.31 0-3.738-1.129-4.004-3.295h2.351z"/>
+            </svg>
+          )
         };
       case "Rust":
         return {
           bg: "bg-orange-500/10 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 border border-orange-500/20",
           dot: "bg-orange-500",
-          label: "Rust"
+          label: "Rust",
+          icon: (
+            <svg className="w-3.5 h-3.5 mr-1 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          )
         };
       case "Go":
         return {
           bg: "bg-cyan-500/10 dark:bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border border-cyan-500/20",
           dot: "bg-cyan-500",
-          label: "Go"
+          label: "Go",
+          icon: (
+            <svg className="w-3.5 h-3.5 mr-1 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12.244 8.785l1.096-1.503c1.472.936 2.593 2.215 3.195 3.82.529 1.411.666 2.923.36 4.398-.242 1.164-.789 2.253-1.611 3.109-1.229 1.282-3.003 2.056-4.85 2.115-1.921.062-3.83-.585-5.263-1.785C3.398 17.514 2.138 15.65 1.7 13.565c-.394-1.874-.08-3.834.887-5.46 1.077-1.815 2.921-3.084 5.01-3.41 1.688-.264 3.428-.027 4.965.733L11.53 7.02c-1.073-.473-2.285-.595-3.447-.367-1.424.279-2.658 1.196-3.327 2.49-.661 1.28-.795 2.8-.358 4.195.347 1.109 1.157 2.05 2.186 2.585 1.144.596 2.512.647 3.738.21a4.238 4.238 0 0 0 2.247-2.128c.36-.807.447-1.724.281-2.604h-3.308v-2.626h5.882z"/>
+            </svg>
+          )
         };
       case "Python":
         return {
           bg: "bg-blue-500/10 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20",
           dot: "bg-blue-500",
-          label: "Python"
+          label: "Python",
+          icon: (
+            <svg className="w-3.5 h-3.5 mr-1 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M11.923 0C8.368 0 8.01.15 6.865 1.583c-1.294 1.62-1.127 3.32-.232 5.07h6.634v.952H4.156C1.729 7.605 0 9.066 0 11.968c0 2.902 2.052 4.137 4.156 4.137h2.29v-3.218c0-2.483 2.062-4.5 4.606-4.5h6.634v-.951h-6.634c-1.818 0-3.355-1.39-3.355-3.25V4.28c0-1.86 1.537-3.218 3.355-3.218h4.436V0h-3.52zM19.844 7.895v3.218c0 2.483-2.062 4.5-4.606 4.5H8.604v.951h6.634c1.818 0 3.355 1.39 3.355 3.25v2.906c0 1.86-1.537 3.218-3.355 3.218h-4.436V24h3.52c3.555 0 3.913-.15 5.058-1.583 1.294-1.62 1.127-3.32.232-5.07h-6.634v-.952h9.111C22.271 16.395 24 14.934 24 12.032c0-2.902-2.052-4.137-4.156-4.137h-2.29z"/>
+            </svg>
+          )
         };
       default:
         return {
           bg: "bg-slate-500/10 dark:bg-slate-500/10 text-slate-700 dark:text-slate-400 border border-slate-500/20",
           dot: "bg-slate-500",
-          label: "Generic"
+          label: "Generic",
+          icon: (
+            <svg className="w-3.5 h-3.5 mr-1 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="16 18 22 12 16 6" />
+              <polyline points="8 6 2 12 8 18" />
+            </svg>
+          )
         };
     }
   };
@@ -282,7 +309,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             {project.name}
                           </h3>
                           <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase ${typeStyle.bg}`}>
-                            {typeStyle.label}
+                            {typeStyle.icon}
+                            <span>{typeStyle.label}</span>
                           </span>
 
                           {project.git_branch && (

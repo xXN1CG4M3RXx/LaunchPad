@@ -193,15 +193,15 @@ export const Settings: React.FC<SettingsProps> = ({ config, onSaveConfig }) => {
                   id="scan-depth"
                   type="range"
                   min="1"
-                  max="3"
+                  max="5"
                   value={scanDepth}
                   onChange={handleDepthChange}
                   className="w-full h-2 bg-slate-100 dark:bg-slate-950 rounded-lg appearance-none cursor-pointer accent-brand-600 focus:outline-none"
                 />
-                <div className="flex justify-between text-xs text-slate-405 dark:text-slate-500 mt-1.5 font-medium">
-                  <span>1 (Shallow, direct subfolders only)</span>
-                  <span>2 (Recommended)</span>
-                  <span>3 (Deep, longer scan time)</span>
+                <div className="flex justify-between text-xs text-slate-400 dark:text-slate-500 mt-1.5 font-medium">
+                  <span>1 (Shallow)</span>
+                  <span>3 (Recommended)</span>
+                  <span>5 (Deep, slower scan)</span>
                 </div>
               </div>
             </div>
