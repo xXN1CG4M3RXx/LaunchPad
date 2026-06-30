@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Search, Play, Square, Terminal,
   Folder, Pin, RefreshCw, FolderSearch, Code, Eye, Globe
@@ -39,6 +39,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [showRunningOnly, setShowRunningOnly] = useState(false);
   const [editingCommand, setEditingCommand] = useState<string | null>(null);
   const [tempCommandValue, setTempCommandValue] = useState("");
+
+  const dynamicTypes = useMemo(() => {
+    const types = new Set<string>();
+    projects.forEach((p) => {
+      if (p.project_type) {
+        types.add(p.project_type);
+      }
+    });
+    const sortedTypes = Array.from(types).sort();
+    return ["All", ...sortedTypes];
+  }, [projects]);
+
+  useEffect(() => {
+    if (!dynamicTypes.includes(filterType)) {
+      setFilterType("All");
+    }
+  }, [dynamicTypes, filterType]);
 
   const handleOpenIDE = async (path: string) => {
     try {
@@ -169,6 +186,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </svg>
           )
         };
+      case "Java":
+        return {
+          bg: "bg-red-500/10 dark:bg-red-500/10 text-red-700 dark:text-red-400 border border-red-500/20",
+          dot: "bg-red-500",
+          label: "Java",
+          icon: (
+            <svg className="w-3.5 h-3.5 mr-1 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 8h1a4 4 0 1 1 0 8h-1" />
+              <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
+              <line x1="6" y1="2" x2="6" y2="4" />
+              <line x1="10" y1="2" x2="10" y2="4" />
+              <line x1="14" y1="2" x2="14" y2="4" />
+            </svg>
+          )
+        };
       default:
         return {
           bg: "bg-slate-500/10 dark:bg-slate-500/10 text-slate-700 dark:text-slate-400 border border-slate-500/20",
@@ -223,7 +255,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             {/* Selection tags */}
             <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-start md:justify-end text-sm">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mr-1 hidden sm:inline">Type:</span>
-              {["All", "Node", "Rust", "Go", "Python", "Generic"].map((type) => (
+              {dynamicTypes.map((type) => (
                 <button
                   key={type}
                   onClick={() => setFilterType(type)}

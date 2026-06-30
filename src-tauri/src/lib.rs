@@ -121,6 +121,8 @@ fn scan_dir_recursive(
     let has_package = paths.iter().any(|p| p.file_name().map_or(false, |n| n == "package.json"));
     let has_go = paths.iter().any(|p| p.file_name().map_or(false, |n| n == "go.mod"));
     let has_py = paths.iter().any(|p| p.file_name().map_or(false, |n| n == "requirements.txt" || n == "pyproject.toml"));
+    let has_mvn = paths.iter().any(|p| p.file_name().map_or(false, |n| n == "pom.xml"));
+    let has_gradle = paths.iter().any(|p| p.file_name().map_or(false, |n| n == "build.gradle" || n == "build.gradle.kts"));
 
     if has_cargo {
         is_project = true;
@@ -157,6 +159,19 @@ fn scan_dir_recursive(
             def_cmd = "python main.py".to_string();
         } else {
             def_cmd = "python -m venv venv".to_string();
+        }
+    } else if has_mvn {
+        is_project = true;
+        p_type = "Java".to_string();
+        def_cmd = "mvn spring-boot:run".to_string();
+    } else if has_gradle {
+        is_project = true;
+        p_type = "Java".to_string();
+        let has_bat = paths.iter().any(|p| p.file_name().map_or(false, |n| n == "gradlew.bat" || n == "gradlew"));
+        if has_bat {
+            def_cmd = if cfg!(target_os = "windows") { "gradlew.bat bootRun".to_string() } else { "./gradlew bootRun".to_string() };
+        } else {
+            def_cmd = "gradle bootRun".to_string();
         }
     }
 
