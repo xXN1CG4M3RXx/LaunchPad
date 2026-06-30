@@ -17,6 +17,7 @@ pub struct AppConfig {
     pub dev_dir: Option<String>,
     pub scan_depth: Option<usize>,
     pub projects: HashMap<String, ProjectConfig>,
+    pub theme: Option<String>,
 }
 
 // Project info returned to the frontend
@@ -378,6 +379,44 @@ fn open_in_explorer(project_path: String) -> Result<(), String> {
     Ok(())
 }
 
+#[derive(Serialize)]
+pub struct GitDetails {
+    pub last_commit: Option<String>,
+    pub has_changes: bool,
+}
+
+#[tauri::command]
+fn get_git_details(project_path: String) -> GitDetails {
+    let run_cmd = |args: &[&str]| -> Option<String> {
+        let mut cmd = std::process::Command::new("git");
+        cmd.args(args).current_dir(&project_path);
+        
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+        }
+
+        let output = cmd.output().ok()?;
+        if output.status.success() {
+            let s = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            if !s.is_empty() {
+                return Some(s);
+            }
+        }
+        None
+    };
+
+    let last_commit = run_cmd(&["log", "-1", "--format=%h - %s (%cr)"]);
+    let status_out = run_cmd(&["status", "--porcelain"]);
+    let has_changes = status_out.map_or(false, |s| !s.trim().is_empty());
+
+    GitDetails {
+        last_commit,
+        has_changes,
+    }
+}
+
 #[tauri::command]
 fn get_system_info() -> SystemInfo {
     let get_ver = |cmd_name: &str, arg: &str| -> Option<String> {
@@ -426,7 +465,8 @@ pub fn run() {
             is_project_running,
             open_in_ide,
             open_in_explorer,
-            get_system_info
+            get_system_info,
+            get_git_details
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

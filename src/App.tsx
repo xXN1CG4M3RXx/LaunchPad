@@ -7,6 +7,7 @@ import { AppConfig, ProjectInfo } from "./types";
 import { Dashboard } from "./components/Dashboard";
 import { Settings } from "./components/Settings";
 import { ConsoleDrawer } from "./components/ConsoleDrawer";
+import { ProjectDetails } from "./components/ProjectDetails";
 
 function App() {
   const [activeTab, setActiveTab] = useState<"dashboard" | "settings">("dashboard");
@@ -14,9 +15,11 @@ function App() {
     dev_dir: null,
     scan_depth: 2,
     projects: {},
+    theme: "dark",
   });
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const [isScanning, setIsScanning] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<ProjectInfo | null>(null);
   
   // Track running projects status
   const [runningProjects, setRunningProjects] = useState<Record<string, boolean>>({});
@@ -31,7 +34,7 @@ function App() {
   // Store unlisteners for Tauri events to prevent leaks
   const unlisteners = useRef<Record<string, () => void>>({});
 
-  // 1. Load config on startup
+  // 1. Load config on startup and bind theme class
   useEffect(() => {
     const loadConfig = async () => {
       try {
@@ -53,6 +56,16 @@ function App() {
       Object.values(unlisteners.current).forEach((unlistenFn) => unlistenFn());
     };
   }, []);
+
+  // Theme Manager: Dark mode is default
+  useEffect(() => {
+    const currentTheme = config.theme || "dark";
+    if (currentTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [config.theme]);
 
   // 2. Set up event listeners for scanned projects
   useEffect(() => {
@@ -213,10 +226,10 @@ function App() {
   const runningCount = Object.values(runningProjects).filter(Boolean).length;
 
   return (
-    <div className="flex h-screen w-screen bg-brand-50 overflow-hidden font-sans text-slate-700 select-none">
+    <div className="flex h-screen w-screen bg-brand-50 dark:bg-slate-950 overflow-hidden font-sans text-slate-700 dark:text-slate-200 select-none transition-colors duration-300">
       
       {/* Sidebar navigation */}
-      <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0">
+      <aside className="w-64 bg-slate-900 dark:bg-slate-950 border-r border-slate-800 dark:border-slate-900 flex flex-col shrink-0">
         {/* Sidebar Brand header */}
         <div className="h-16 px-6 border-b border-slate-800 flex items-center space-x-3 bg-slate-950/40">
           <div className="p-1.5 bg-brand-500 rounded-lg text-white">
@@ -289,24 +302,39 @@ function App() {
       </aside>
 
       {/* Main panel area */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden bg-brand-50/30">
+      <main className="flex-1 flex flex-col h-full overflow-hidden bg-brand-50/30 dark:bg-slate-900/50">
         <div className="flex-1 overflow-y-auto px-8 py-8">
           {activeTab === "dashboard" ? (
-            <Dashboard
-              projects={projects}
-              runningProjects={runningProjects}
-              config={config}
-              onSaveConfig={handleSaveConfig}
-              onStartProject={handleStartProject}
-              onStopProject={handleStopProject}
-              onOpenConsole={handleOpenConsole}
-              onRefresh={
-                config.dev_dir 
-                  ? () => scanProjects(config.dev_dir!, config.scan_depth || 2) 
-                  : handleWelcomeDirectoryPick
-              }
-              isScanning={isScanning}
-            />
+            selectedProject ? (
+              <ProjectDetails
+                project={selectedProject}
+                isRunning={runningProjects[selectedProject.path] || false}
+                logs={projectLogs[selectedProject.path] || []}
+                config={config}
+                onBack={() => setSelectedProject(null)}
+                onStart={handleStartProject}
+                onStop={handleStopProject}
+                onClearLogs={() => setProjectLogs((prev) => ({ ...prev, [selectedProject.path]: [] }))}
+                onSaveConfig={handleSaveConfig}
+              />
+            ) : (
+              <Dashboard
+                projects={projects}
+                runningProjects={runningProjects}
+                config={config}
+                onSaveConfig={handleSaveConfig}
+                onStartProject={handleStartProject}
+                onStopProject={handleStopProject}
+                onOpenConsole={handleOpenConsole}
+                onSelectProject={setSelectedProject}
+                onRefresh={
+                  config.dev_dir 
+                    ? () => scanProjects(config.dev_dir!, config.scan_depth || 2) 
+                    : handleWelcomeDirectoryPick
+                }
+                isScanning={isScanning}
+              />
+            )
           ) : (
             <Settings config={config} onSaveConfig={handleSaveConfig} />
           )}
