@@ -170,9 +170,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <button
           onClick={onRefresh}
           disabled={isScanning || !config.dev_dir}
-          className="flex items-center justify-center space-x-2 bg-brand-50 hover:bg-brand-100 dark:bg-brand-950/20 dark:hover:bg-brand-950/40 dark:text-brand-400 dark:border-brand-900/50 font-semibold px-4.5 py-2.5 rounded-xl border border-brand-200 transition-colors shadow-sm disabled:opacity-50 active:scale-[0.98] shrink-0"
+          className="group flex items-center justify-center space-x-2 bg-white/5 hover:bg-white/10 dark:bg-slate-900/40 dark:hover:bg-slate-800/60 text-slate-700 dark:text-slate-200 font-semibold px-5 py-2.5 rounded-xl border border-slate-200 dark:border-white/5 transition-all shadow-sm disabled:opacity-50 active:scale-[0.98] shrink-0"
         >
-          <RefreshCw className={`w-4 h-4 ${isScanning ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-4 h-4 transition-transform duration-700 group-hover:rotate-180 ${isScanning ? 'animate-spin' : ''}`} />
           <span>{isScanning ? "Scanning..." : "Refresh"}</span>
         </button>
       </div>
@@ -262,12 +262,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 return (
                   <div
                     key={project.path}
-                    className={`bg-white dark:bg-slate-900/30 rounded-xl border border-slate-205 dark:border-white/5 transition-all duration-300 flex flex-col shadow-sm relative overflow-hidden group hover-scale ${isRunning
+                    className={`bg-white dark:bg-slate-900/30 rounded-xl border border-slate-205 dark:border-white/5 flex flex-col shadow-sm relative group hover-scale ${isRunning
                         ? 'ring-1 ring-emerald-500/30'
                         : ''
                       }`}
                   >
-                    <div className="absolute top-0 left-0 right-0 h-[3px] brand-gradient-bg"></div>
+                    <div className="absolute top-0 left-0 right-0 h-[3px] brand-gradient-bg rounded-t-xl"></div>
 
                     {/* Running Indicator Dot */}
                     {isRunning && (
