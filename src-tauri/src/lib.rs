@@ -4,6 +4,15 @@ use std::sync::{Arc, Mutex};
 use std::io::BufRead;
 use tauri::Emitter;
 
+// Structure for custom standalone scripts
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct ScriptConfig {
+    pub id: String,
+    pub name: String,
+    pub path: String,
+    pub command: String,
+}
+
 // Structure for per-project configurations
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ProjectConfig {
@@ -18,6 +27,7 @@ pub struct AppConfig {
     pub scan_depth: Option<usize>,
     pub projects: HashMap<String, ProjectConfig>,
     pub theme: Option<String>,
+    pub scripts: Option<Vec<ScriptConfig>>,
 }
 
 // Project info returned to the frontend
@@ -38,9 +48,10 @@ pub struct SystemInfo {
     pub git_version: Option<String>,
 }
 
-// Shared application state to track running process IDs
+// Shared application state to track running process IDs and stdin writers
 pub struct ProcessState {
     pub running_processes: Arc<Mutex<HashMap<String, u32>>>,
+    pub stdin_writers: Arc<Mutex<HashMap<String, std::process::ChildStdin>>>,
 }
 
 // Helper to determine path of the config file
@@ -257,6 +268,32 @@ struct StoppedPayload {
 }
 
 #[tauri::command]
+fn select_file() -> Option<String> {
+    rfd::FileDialog::new()
+        .set_title("Script-Datei auswählen")
+        .pick_file()
+        .map(|p| p.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+fn send_stdin(
+    state: tauri::State<'_, ProcessState>,
+    project_path: String,
+    text: String,
+) -> Result<(), String> {
+    let mut writers = state.stdin_writers.lock().unwrap();
+    if let Some(stdin) = writers.get_mut(&project_path) {
+        use std::io::Write;
+        stdin.write_all(text.as_bytes()).map_err(|e| e.to_string())?;
+        stdin.write_all(b"\n").map_err(|e| e.to_string())?;
+        stdin.flush().map_err(|e| e.to_string())?;
+        Ok(())
+    } else {
+        Err("Prozess läuft nicht oder hat keinen Standard-Input-Stream".to_string())
+    }
+}
+
+#[tauri::command]
 fn start_project(
     app_handle: tauri::AppHandle,
     state: tauri::State<'_, ProcessState>,
@@ -267,15 +304,24 @@ fn start_project(
     if let Some(pid) = running.get(&project_path) {
         kill_process_tree(*pid);
         running.remove(&project_path);
+        state.stdin_writers.lock().unwrap().remove(&project_path);
         let _ = app_handle.emit("project-stopped", StoppedPayload {
             project_path: project_path.clone(),
             exit_code: -1,
         });
     }
 
+    let path = std::path::Path::new(&project_path);
+    let current_dir = if path.is_file() {
+        path.parent().unwrap_or(path)
+    } else {
+        path
+    };
+
     let mut cmd = std::process::Command::new("cmd");
     cmd.args(&["/C", &command]);
-    cmd.current_dir(&project_path);
+    cmd.current_dir(current_dir);
+    cmd.stdin(std::process::Stdio::piped());
     cmd.stdout(std::process::Stdio::piped());
     cmd.stderr(std::process::Stdio::piped());
 
@@ -288,6 +334,9 @@ fn start_project(
     let mut child = cmd.spawn().map_err(|e| format!("Fehler beim Starten des Befehls: {}", e))?;
     let pid = child.id();
     running.insert(project_path.clone(), pid);
+    if let Some(stdin) = child.stdin.take() {
+        state.stdin_writers.lock().unwrap().insert(project_path.clone(), stdin);
+    }
 
     let stdout = child.stdout.take().ok_or("Fehler beim Öffnen von stdout")?;
     let stderr = child.stderr.take().ok_or("Fehler beim Öffnen von stderr")?;
@@ -295,6 +344,7 @@ fn start_project(
     let project_path_clone = project_path.clone();
     let app_handle_clone = app_handle.clone();
     let running_processes_clone = Arc::clone(&state.running_processes);
+    let stdin_writers_clone = Arc::clone(&state.stdin_writers);
 
     std::thread::spawn(move || {
         let stdout_app_handle = app_handle_clone.clone();
@@ -335,6 +385,7 @@ fn start_project(
                 running.remove(&stdout_path);
             }
         }
+        stdin_writers_clone.lock().unwrap().remove(&stdout_path);
         
         let code = match exit_status {
             Ok(status) => status.code().unwrap_or(0),
@@ -361,6 +412,7 @@ fn stop_project(
     project_path: String,
 ) -> Result<(), String> {
     let mut running = state.running_processes.lock().unwrap();
+    state.stdin_writers.lock().unwrap().remove(&project_path);
     if let Some(pid) = running.remove(&project_path) {
         kill_process_tree(pid);
         Ok(())
@@ -512,11 +564,14 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .manage(ProcessState {
             running_processes: Arc::new(Mutex::new(HashMap::new())),
+            stdin_writers: Arc::new(Mutex::new(HashMap::new())),
         })
         .invoke_handler(tauri::generate_handler![
             get_config,
             save_config,
             select_directory,
+            select_file,
+            send_stdin,
             scan_projects,
             start_project,
             stop_project,

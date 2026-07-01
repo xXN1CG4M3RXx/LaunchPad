@@ -11,6 +11,7 @@ interface ConsoleDrawerProps {
   logs: string[];
   onClear: () => void;
   onStop: () => void;
+  onSendInput?: (text: string) => void;
 }
 
 export const ConsoleDrawer: React.FC<ConsoleDrawerProps> = ({
@@ -22,9 +23,19 @@ export const ConsoleDrawer: React.FC<ConsoleDrawerProps> = ({
   logs,
   onClear,
   onStop,
+  onSendInput,
 }) => {
   const terminalEndRef = useRef<HTMLDivElement>(null);
   const [autoScroll, setAutoScroll] = useState(true);
+  const [inputText, setInputText] = useState("");
+
+  const handleSendInput = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (inputText.trim() && onSendInput) {
+      onSendInput(inputText);
+      setInputText("");
+    }
+  };
 
   // Scroll to bottom when logs change
   useEffect(() => {
@@ -132,6 +143,28 @@ export const ConsoleDrawer: React.FC<ConsoleDrawerProps> = ({
           )}
           <div ref={terminalEndRef} />
         </div>
+
+        {/* Terminal Input Form */}
+        {isRunning && onSendInput && (
+          <form onSubmit={handleSendInput} className="flex items-center px-6 py-4 bg-slate-900 border-t border-brand-900/40">
+            <span className="text-brand-500 font-bold mr-2 select-none">&gt;</span>
+            <input
+              type="text"
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              placeholder="Type input to send to process..."
+              className="flex-1 bg-transparent text-slate-100 font-mono text-sm border-none outline-none focus:ring-0 placeholder:text-slate-600"
+              autoFocus
+            />
+            <button
+              type="submit"
+              className="ml-2 text-xs font-semibold bg-brand-600 hover:bg-brand-700 text-white px-3 py-1.5 rounded-md transition-colors"
+            >
+              Send
+            </button>
+          </form>
+        )}
+
       </div>
     </div>
   );

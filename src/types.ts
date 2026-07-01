@@ -3,11 +3,19 @@ export interface ProjectConfig {
   is_pinned: boolean;
 }
 
+export interface ScriptConfig {
+  id: string;
+  name: string;
+  path: string;
+  command: string;
+}
+
 export interface AppConfig {
   dev_dir: string | null;
   scan_depth: number | null;
   projects: Record<string, ProjectConfig>;
   theme: string | null;
+  scripts?: ScriptConfig[];
 }
 
 export interface ProjectInfo {

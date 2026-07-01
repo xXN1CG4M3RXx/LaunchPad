@@ -1,21 +1,23 @@
 import { useState, useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
-import { Rocket, FolderKanban, Settings as SettingsIcon, Terminal } from "lucide-react";
+import { Rocket, FolderKanban, Settings as SettingsIcon, Terminal, FileCode } from "lucide-react";
 
 import { AppConfig, ProjectInfo } from "./types";
 import { Dashboard } from "./components/Dashboard";
 import { Settings } from "./components/Settings";
 import { ConsoleDrawer } from "./components/ConsoleDrawer";
 import { ProjectDetails } from "./components/ProjectDetails";
+import { Scripts } from "./components/Scripts";
 
 function App() {
-  const [activeTab, setActiveTab] = useState<"dashboard" | "settings">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "settings" | "scripts">("dashboard");
   const [config, setConfig] = useState<AppConfig>({
     dev_dir: null,
     scan_depth: 2,
     projects: {},
     theme: "dark",
+    scripts: [],
   });
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const [isScanning, setIsScanning] = useState(false);
@@ -29,7 +31,21 @@ function App() {
   
   // Console Drawer state
   const [consoleOpen, setConsoleOpen] = useState(false);
-  const [consoleProject, setConsoleProject] = useState<ProjectInfo | null>(null);
+  const [consoleProject, setConsoleProject] = useState<{ name: string; path: string } | null>(null);
+
+  const handleSendStdin = async (projectPath: string, text: string) => {
+    try {
+      await invoke("send_stdin", { projectPath, text });
+      
+      // Append command prompt log locally in stdout log so the user sees what they typed
+      setProjectLogs((prev) => ({
+        ...prev,
+        [projectPath]: [...(prev[projectPath] || []), `> ${text}`],
+      }));
+    } catch (e) {
+      console.error("Fehler beim Senden von stdin:", e);
+    }
+  };
 
   // 1. Load config on startup and bind global event listeners
   useEffect(() => {
@@ -223,7 +239,7 @@ function App() {
   };
 
   // Open the terminal console drawer
-  const handleOpenConsole = (project: ProjectInfo) => {
+  const handleOpenConsole = (project: { name: string; path: string }) => {
     setConsoleProject(project);
     setConsoleOpen(true);
   };
@@ -269,6 +285,18 @@ function App() {
           </button>
 
           <button
+            onClick={() => setActiveTab("scripts")}
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all active:scale-[0.98] ${
+              activeTab === "scripts"
+                ? "bg-brand-600 text-white shadow-md shadow-brand-900/10"
+                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+            }`}
+          >
+            <FileCode className="w-4.5 h-4.5" />
+            <span>Scripts</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab("settings")}
             className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all active:scale-[0.98] ${
               activeTab === "settings"
@@ -296,7 +324,14 @@ function App() {
                 const runningPath = Object.keys(runningProjects).find((k) => runningProjects[k]);
                 if (runningPath) {
                   const runningProj = projects.find((p) => p.path === runningPath);
-                  if (runningProj) handleOpenConsole(runningProj);
+                  if (runningProj) {
+                    handleOpenConsole(runningProj);
+                  } else {
+                    const runningScript = config.scripts?.find((s) => s.path === runningPath);
+                    if (runningScript) {
+                      handleOpenConsole({ name: runningScript.name, path: runningScript.path });
+                    }
+                  }
                 }
               }}
               className="w-full flex items-center justify-center space-x-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 px-3 rounded-lg border border-slate-700 text-xs transition-colors"
@@ -343,6 +378,15 @@ function App() {
                 isScanning={isScanning}
               />
             )
+          ) : activeTab === "scripts" ? (
+            <Scripts
+              config={config}
+              runningProjects={runningProjects}
+              onSaveConfig={handleSaveConfig}
+              onStartScript={handleStartProject}
+              onStopScript={handleStopProject}
+              onOpenConsole={handleOpenConsole}
+            />
           ) : (
             <Settings config={config} onSaveConfig={handleSaveConfig} />
           )}
@@ -360,6 +404,7 @@ function App() {
           logs={projectLogs[consoleProject.path] || []}
           onClear={() => setProjectLogs((prev) => ({ ...prev, [consoleProject.path]: [] }))}
           onStop={() => handleStopProject(consoleProject.path)}
+          onSendInput={(text) => handleSendStdin(consoleProject.path, text)}
         />
       )}
 
