@@ -77,3 +77,43 @@ html.dark body {
 .animate-toast {
   animation: toast-slide-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
+
+/* Custom premium scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.2);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.45);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Dark mode overrides for scrollbars */
+.dark ::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.05);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(147, 51, 234, 0.25);
+  border: 2px solid #0b0f19;
+  background-clip: padding-box;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(147, 51, 234, 0.5);
+  border: 2px solid #0b0f19;
+  background-clip: padding-box;
+}

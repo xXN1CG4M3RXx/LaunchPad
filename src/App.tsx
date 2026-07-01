@@ -310,7 +310,7 @@ function App() {
 
       {/* Main panel area */}
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-brand-50/30 dark:bg-slate-900/50">
-        <div className="flex-1 overflow-y-auto px-8 py-8">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-8 py-8">
           {activeTab === "dashboard" ? (
             selectedProject ? (
               <ProjectDetails
