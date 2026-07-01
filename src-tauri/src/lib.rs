@@ -319,7 +319,7 @@ fn start_project(
     };
 
     let mut cmd = std::process::Command::new("cmd");
-    cmd.args(&["/C", &command]);
+    cmd.args(&["/C", &format!("\"{}\"", command)]);
     cmd.current_dir(current_dir);
     cmd.stdin(std::process::Stdio::piped());
     cmd.stdout(std::process::Stdio::piped());
