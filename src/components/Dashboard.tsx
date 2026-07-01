@@ -239,9 +239,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {config.dev_dir ? (
         <>
           {/* Filters Bar */}
-          <div className="bg-white dark:bg-slate-900/40 dark:backdrop-filter dark:backdrop-blur-md rounded-xl border border-slate-200 dark:border-white/5 p-4 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
+          <div className="bg-white dark:bg-slate-900/40 dark:backdrop-filter dark:backdrop-blur-md rounded-xl border border-slate-200 dark:border-white/5 p-4 shadow-sm flex flex-col lg:flex-row gap-4 items-center justify-between">
             {/* Search */}
-            <div className="relative w-full md:max-w-xs">
+            <div className="relative w-full lg:max-w-xs">
               <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400 dark:text-slate-500" />
               <input
                 type="text"
@@ -253,7 +253,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
 
             {/* Selection tags */}
-            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-start md:justify-end text-sm">
+            <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-start lg:justify-end text-sm">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mr-1 hidden sm:inline">Type:</span>
               {dynamicTypes.map((type) => (
                 <button
@@ -298,7 +298,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {processedProjects.map((project) => {
                 const isRunning = runningProjects[project.path] || false;
                 const isPinned = config.projects[project.path]?.is_pinned || false;
@@ -441,7 +441,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                           title="View Details & Console"
                         >
                           <Eye className="w-3.5 h-3.5" />
-                          <span className="hidden sm:inline">Details</span>
+                          <span className="hidden lg:inline">Details</span>
                         </button>
 
                         {/* Quick drawer log viewer icon */}
@@ -463,7 +463,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                                 title="Open in Browser"
                               >
                                 <Globe className="w-3.5 h-3.5" />
-                                <span className="hidden sm:inline">Browser</span>
+                                <span className="hidden lg:inline">Browser</span>
                               </button>
                             )}
                             <button
