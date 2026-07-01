@@ -319,7 +319,6 @@ fn start_project(
     };
 
     let mut cmd = std::process::Command::new("cmd");
-    cmd.args(&["/C", &format!("\"{}\"", command)]);
     cmd.current_dir(current_dir);
     cmd.stdin(std::process::Stdio::piped());
     cmd.stdout(std::process::Stdio::piped());
@@ -328,7 +327,14 @@ fn start_project(
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;
+        cmd.raw_arg("/C");
+        cmd.raw_arg(&command);
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+    #[cfg(not(windows))]
+    {
+        cmd.arg("/C");
+        cmd.arg(&command);
     }
 
     let mut child = cmd.spawn().map_err(|e| format!("Fehler beim Starten des Befehls: {}", e))?;
