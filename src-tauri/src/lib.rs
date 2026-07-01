@@ -123,6 +123,7 @@ fn scan_dir_recursive(
     let has_py = paths.iter().any(|p| p.file_name().map_or(false, |n| n == "requirements.txt" || n == "pyproject.toml"));
     let has_mvn = paths.iter().any(|p| p.file_name().map_or(false, |n| n == "pom.xml"));
     let has_gradle = paths.iter().any(|p| p.file_name().map_or(false, |n| n == "build.gradle" || n == "build.gradle.kts"));
+    let has_docker = paths.iter().any(|p| p.file_name().map_or(false, |n| n == "docker-compose.yml" || n == "docker-compose.yaml"));
 
     if has_cargo {
         is_project = true;
@@ -173,6 +174,10 @@ fn scan_dir_recursive(
         } else {
             def_cmd = "gradle bootRun".to_string();
         }
+    } else if has_docker {
+        is_project = true;
+        p_type = "Docker".to_string();
+        def_cmd = "docker compose up".to_string();
     }
 
     if is_project {
