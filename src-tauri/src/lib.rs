@@ -1,7 +1,6 @@
 use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use std::io::BufRead;
 use tauri::Emitter;
 
 // Structure for custom standalone scripts
@@ -320,6 +319,7 @@ fn start_project(
 
     let mut cmd = std::process::Command::new("cmd");
     cmd.current_dir(current_dir);
+    cmd.env("PYTHONUNBUFFERED", "1");
     cmd.stdin(std::process::Stdio::piped());
     cmd.stdout(std::process::Stdio::piped());
     cmd.stderr(std::process::Stdio::piped());
@@ -355,30 +355,44 @@ fn start_project(
     std::thread::spawn(move || {
         let stdout_app_handle = app_handle_clone.clone();
         let stdout_path = project_path_clone.clone();
-        let stdout_reader = std::io::BufReader::new(stdout);
+        let mut stdout_reader = stdout;
         let stdout_path_for_thread = stdout_path.clone();
         std::thread::spawn(move || {
-            for line in stdout_reader.lines() {
-                if let Ok(l) = line {
-                    let _ = stdout_app_handle.emit("project-log", LogPayload {
-                        project_path: stdout_path_for_thread.clone(),
-                        text: l,
-                    });
+            use std::io::Read;
+            let mut buf = [0; 4096];
+            loop {
+                match stdout_reader.read(&mut buf) {
+                    Ok(0) => break,
+                    Ok(n) => {
+                        let text = String::from_utf8_lossy(&buf[..n]).to_string();
+                        let _ = stdout_app_handle.emit("project-log", LogPayload {
+                            project_path: stdout_path_for_thread.clone(),
+                            text,
+                        });
+                    }
+                    Err(_) => break,
                 }
             }
         });
 
         let stderr_app_handle = app_handle_clone.clone();
         let stderr_path = project_path_clone.clone();
-        let stderr_reader = std::io::BufReader::new(stderr);
+        let mut stderr_reader = stderr;
         let stderr_path_for_thread = stderr_path.clone();
         std::thread::spawn(move || {
-            for line in stderr_reader.lines() {
-                if let Ok(l) = line {
-                    let _ = stderr_app_handle.emit("project-log", LogPayload {
-                        project_path: stderr_path_for_thread.clone(),
-                        text: l,
-                    });
+            use std::io::Read;
+            let mut buf = [0; 4096];
+            loop {
+                match stderr_reader.read(&mut buf) {
+                    Ok(0) => break,
+                    Ok(n) => {
+                        let text = String::from_utf8_lossy(&buf[..n]).to_string();
+                        let _ = stderr_app_handle.emit("project-log", LogPayload {
+                            project_path: stderr_path_for_thread.clone(),
+                            text,
+                        });
+                    }
+                    Err(_) => break,
                 }
             }
         });

@@ -61,10 +61,26 @@ function App() {
             const { project_path, text } = event.payload;
             setProjectLogs((prev) => {
               const currentLogs = prev[project_path] || [];
-              const newLogs = [...currentLogs, text];
-              if (newLogs.length > 2000) {
-                newLogs.shift();
+              const lines = text.split("\n");
+              
+              if (currentLogs.length === 0) {
+                return {
+                  ...prev,
+                  [project_path]: lines,
+                };
               }
+              
+              const newLogs = [...currentLogs];
+              newLogs[newLogs.length - 1] = newLogs[newLogs.length - 1] + lines[0];
+              
+              for (let i = 1; i < lines.length; i++) {
+                newLogs.push(lines[i]);
+              }
+              
+              if (newLogs.length > 2000) {
+                newLogs.splice(0, newLogs.length - 2000);
+              }
+              
               return {
                 ...prev,
                 [project_path]: newLogs,
