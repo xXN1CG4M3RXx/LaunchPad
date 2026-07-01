@@ -95,6 +95,10 @@ export const Scripts: React.FC<ScriptsProps> = ({
           defaultCmd = `node "${selected}"`;
         } else if (ext === "ts") {
           defaultCmd = `ts-node "${selected}"`;
+        } else if (ext === "java") {
+          defaultCmd = `java "${selected}"`;
+        } else if (ext === "jar") {
+          defaultCmd = `java -jar "${selected}"`;
         } else if (ext === "bat") {
           defaultCmd = `cmd /C "${selected}"`;
         } else if (ext === "ps1") {
