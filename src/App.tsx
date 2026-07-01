@@ -34,16 +34,39 @@ function App() {
   const [consoleProject, setConsoleProject] = useState<{ name: string; path: string } | null>(null);
 
   const handleSendStdin = async (projectPath: string, text: string) => {
+    // Append command prompt log locally in stdout log immediately to maintain correct stream ordering
+    setProjectLogs((prev) => {
+      const currentLogs = prev[projectPath] || [];
+      const lines = [`> ${text}`];
+      
+      if (currentLogs.length === 0) {
+        return {
+          ...prev,
+          [projectPath]: lines,
+        };
+      }
+      
+      const newLogs = [...currentLogs];
+      newLogs[newLogs.length - 1] = newLogs[newLogs.length - 1] + lines[0];
+      
+      if (newLogs.length > 2000) {
+        newLogs.splice(0, newLogs.length - 2000);
+      }
+      
+      return {
+        ...prev,
+        [projectPath]: newLogs,
+      };
+    });
+
     try {
       await invoke("send_stdin", { projectPath, text });
-      
-      // Append command prompt log locally in stdout log so the user sees what they typed
-      setProjectLogs((prev) => ({
-        ...prev,
-        [projectPath]: [...(prev[projectPath] || []), `> ${text}`],
-      }));
     } catch (e) {
       console.error("Fehler beim Senden von stdin:", e);
+      setProjectLogs((prev) => ({
+        ...prev,
+        [projectPath]: [...(prev[projectPath] || []), `[Fehler beim Senden an stdin: ${e}]`],
+      }));
     }
   };
 
