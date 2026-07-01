@@ -42,12 +42,13 @@ function App() {
       if (currentLogs.length === 0) {
         return {
           ...prev,
-          [projectPath]: lines,
+          [projectPath]: [...lines, ""],
         };
       }
       
       const newLogs = [...currentLogs];
       newLogs[newLogs.length - 1] = newLogs[newLogs.length - 1] + lines[0];
+      newLogs.push(""); // Force a new line because the user pressed Enter/Submit
       
       if (newLogs.length > 2000) {
         newLogs.splice(0, newLogs.length - 2000);
