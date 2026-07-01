@@ -14,6 +14,31 @@ interface ScriptsProps {
   onOpenConsole: (project: { name: string; path: string }) => void;
 }
 
+const getScriptLanguageInfo = (path: string) => {
+  const filename = path.split(/[/\\]/).pop() || "";
+  const ext = filename.split(".").pop()?.toLowerCase();
+  
+  switch (ext) {
+    case "py":
+      return { label: "Python", style: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20" };
+    case "js":
+      return { label: "JavaScript", style: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20" };
+    case "ts":
+      return { label: "TypeScript", style: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20" };
+    case "java":
+    case "jar":
+      return { label: "Java", style: "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20" };
+    case "bat":
+      return { label: "Batch", style: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20" };
+    case "ps1":
+      return { label: "PowerShell", style: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20" };
+    case "sh":
+      return { label: "Shell", style: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20" };
+    default:
+      return { label: "Script", style: "bg-violet-500/10 text-violet-700 dark:text-violet-400 border-violet-500/20" };
+  }
+};
+
 export const Scripts: React.FC<ScriptsProps> = ({
   config,
   runningProjects,
@@ -188,6 +213,15 @@ export const Scripts: React.FC<ScriptsProps> = ({
                       <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase bg-violet-500/10 text-violet-700 dark:text-violet-400 border border-violet-500/20">
                         Script
                       </span>
+                      {(() => {
+                        const lang = getScriptLanguageInfo(script.path);
+                        if (lang.label === "Script") return null;
+                        return (
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase border ${lang.style}`}>
+                            {lang.label}
+                          </span>
+                        );
+                      })()}
                     </div>
                     <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono truncate mt-1 cursor-help select-all" title={script.path}>
                       {script.path}
