@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "build:all": "npm run build && npm run tauri build && powershell -Command \"Get-ChildItem -Path src-tauri/target/release/bundle -Filter *.exe -Recurse | Copy-Item -Destination . -Force; Get-ChildItem -Path src-tauri/target/release/bundle -Filter *.msi -Recurse | Copy-Item -Destination . -Force; Copy-Item src-tauri/target/release/tauri-app.exe .\\LaunchPad.exe -Force\""
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
