@@ -212,6 +212,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </svg>
           )
         };
+      case "Static":
+        return {
+          bg: "bg-amber-500/10 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20",
+          dot: "bg-amber-500",
+          label: "Static Site",
+          icon: (
+            <svg className="w-3.5 h-3.5 mr-1 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="16 18 22 12 16 6" />
+              <polyline points="8 6 2 12 8 18" />
+              <line x1="14" y1="4" x2="10" y2="20" />
+            </svg>
+          )
+        };
       default:
         return {
           bg: "bg-slate-500/10 dark:bg-slate-500/10 text-slate-700 dark:text-slate-400 border border-slate-500/20",

@@ -34,7 +34,7 @@ pub struct AppConfig {
 pub struct ProjectInfo {
     pub name: String,
     pub path: String,
-    pub project_type: String, // Node, Rust, Go, Python, Generic
+    pub project_type: String, // Node, Rust, Go, Python, Java, Docker, Static, Generic
     pub default_command: String,
     pub git_branch: Option<String>,
 }
@@ -134,6 +134,7 @@ fn scan_dir_recursive(
     let has_mvn = paths.iter().any(|p| p.file_name().map_or(false, |n| n == "pom.xml"));
     let has_gradle = paths.iter().any(|p| p.file_name().map_or(false, |n| n == "build.gradle" || n == "build.gradle.kts"));
     let has_docker = paths.iter().any(|p| p.file_name().map_or(false, |n| n == "docker-compose.yml" || n == "docker-compose.yaml"));
+    let has_static = paths.iter().any(|p| p.file_name().map_or(false, |n| n == "index.html"));
 
     if has_cargo {
         is_project = true;
@@ -188,6 +189,10 @@ fn scan_dir_recursive(
         is_project = true;
         p_type = "Docker".to_string();
         def_cmd = "docker compose up".to_string();
+    } else if has_static {
+        is_project = true;
+        p_type = "Static".to_string();
+        def_cmd = "npx -y serve".to_string();
     }
 
     if is_project {
