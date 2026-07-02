@@ -32,6 +32,7 @@ export const ApiClient: React.FC<ApiClientProps> = ({ projects, config }) => {
   const [history, setHistory] = useState<SavedRequest[]>([]);
   const [copied, setCopied] = useState(false);
   const [showHeaders, setShowHeaders] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   // Load history from localStorage on mount
   useEffect(() => {
@@ -214,17 +215,23 @@ export const ApiClient: React.FC<ApiClientProps> = ({ projects, config }) => {
                 type="text"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
                 placeholder="http://localhost:3000/api"
                 className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
               {/* Autocomplete suggestions popup overlay */}
-              {url.endsWith(":") && portSuggestions.length > 0 && (
+              {isFocused && url.endsWith(":") && portSuggestions.length > 0 && (
                 <div className="absolute top-12 left-0 right-0 bg-slate-950 border border-slate-800 rounded-xl shadow-2xl z-20 max-h-40 overflow-y-auto">
                   {portSuggestions.map((s) => (
                     <button
                       key={s}
                       type="button"
-                      onClick={() => setUrl(s)}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setUrl(s);
+                        setIsFocused(false);
+                      }}
                       className="w-full text-left px-4 py-2 text-xs font-mono text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-colors"
                     >
                       {s}
