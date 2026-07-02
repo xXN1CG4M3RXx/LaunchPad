@@ -9,6 +9,11 @@ export interface ActivePort {
   process_name: string;
 }
 
+export interface EnvEntry {
+  key: string;
+  value: string;
+}
+
 export interface ProjectConfig {
   custom_command: string | null;
   is_pinned: boolean;

@@ -25,6 +25,12 @@ pub struct ActivePort {
     pub process_name: String,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct EnvEntry {
+    pub key: String,
+    pub value: String,
+}
+
 // Structure for per-project configurations
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ProjectConfig {
@@ -692,6 +698,89 @@ fn get_active_ports() -> Result<Vec<ActivePort>, String> {
     }
 }
 
+#[tauri::command]
+fn read_env_file(project_path: String) -> Result<Option<Vec<EnvEntry>>, String> {
+    let env_path = std::path::PathBuf::from(&project_path).join(".env");
+    if !env_path.exists() {
+        return Ok(None);
+    }
+
+    let content = std::fs::read_to_string(&env_path).map_err(|e| format!("Fehler beim Lesen der .env-Datei: {}", e))?;
+    let mut entries = Vec::new();
+
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+
+        if let Some(eq_idx) = line.find('=') {
+            let key = line[..eq_idx].trim().to_string();
+            let val_raw = line[eq_idx + 1..].trim();
+
+            // Strip matching quotes
+            let mut value = val_raw.to_string();
+            if (value.starts_with('"') && value.ends_with('"')) || (value.starts_with('\'') && value.ends_with('\'')) {
+                if value.len() >= 2 {
+                    value = value[1..value.len() - 1].to_string();
+                }
+            }
+
+            entries.push(EnvEntry { key, value });
+        }
+    }
+
+    Ok(Some(entries))
+}
+
+#[tauri::command]
+fn save_env_file(project_path: String, entries: Vec<EnvEntry>) -> Result<(), String> {
+    use std::collections::HashSet;
+    use std::io::Write;
+
+    let env_path = std::path::PathBuf::from(&project_path).join(".env");
+    let mut written_keys = HashSet::new();
+    let mut new_lines = Vec::new();
+
+    if env_path.exists() {
+        let content = std::fs::read_to_string(&env_path).map_err(|e| format!("Fehler beim Lesen der .env-Datei: {}", e))?;
+        for line in content.lines() {
+            if let Some(eq_idx) = line.find('=') {
+                let left_part = &line[..eq_idx];
+                if left_part.trim().starts_with('#') {
+                    new_lines.push(line.to_string());
+                    continue;
+                }
+
+                let key = left_part.trim().to_string();
+                if let Some(entry) = entries.iter().find(|e| e.key == key) {
+                    new_lines.push(format!("{}={}", key, entry.value));
+                    written_keys.insert(key);
+                } else {
+                    // Key was deleted, skip line
+                }
+            } else {
+                new_lines.push(line.to_string());
+            }
+        }
+    }
+
+    // Append any new entries
+    for entry in &entries {
+        if !written_keys.contains(&entry.key) {
+            new_lines.push(format!("{}={}", entry.key, entry.value));
+        }
+    }
+
+    // Write back
+    let mut file = std::fs::File::create(&env_path).map_err(|e| format!("Fehler beim Erstellen der .env-Datei: {}", e))?;
+    for line in new_lines {
+        writeln!(file, "{}", line).map_err(|e| format!("Fehler beim Schreiben der .env-Datei: {}", e))?;
+    }
+
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -716,7 +805,9 @@ pub fn run() {
             get_git_details,
             open_in_browser,
             get_active_ports,
-            kill_process_by_pid
+            kill_process_by_pid,
+            read_env_file,
+            save_env_file
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

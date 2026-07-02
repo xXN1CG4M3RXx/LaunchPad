@@ -2,9 +2,9 @@ import React, { useEffect, useState, useRef, useMemo } from "react";
 import { 
   ChevronLeft, Play, Square, Code, Folder, 
   Terminal, Trash2, Copy, GitBranch, AlertCircle, CheckCircle2, RefreshCw, Globe,
-  Plus, Edit2, AlertTriangle
+  Plus, Edit2, AlertTriangle, Eye, EyeOff, FileText
 } from "lucide-react";
-import { ProjectInfo, AppConfig, GitDetails, ActivePort } from "../types";
+import { ProjectInfo, AppConfig, GitDetails, ActivePort, EnvEntry } from "../types";
 import { invoke } from "@tauri-apps/api/core";
 import { stripAnsi } from "../utils";
 
@@ -124,6 +124,110 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
     });
     setIsEditingPort(false);
   };
+
+  // .env manager state
+  const [envEntries, setEnvEntries] = useState<EnvEntry[] | null>(null);
+  const [originalEnv, setOriginalEnv] = useState<EnvEntry[] | null>(null);
+  const [revealedKeys, setRevealedKeys] = useState<Record<string, boolean>>({});
+  const [savingEnv, setSavingEnv] = useState(false);
+  const [loadingEnv, setLoadingEnv] = useState(false);
+
+  const fetchEnv = async () => {
+    setLoadingEnv(true);
+    try {
+      const data = await invoke<EnvEntry[] | null>("read_env_file", { projectPath: project.path });
+      if (data) {
+        setEnvEntries(data);
+        setOriginalEnv(JSON.parse(JSON.stringify(data)));
+      } else {
+        setEnvEntries(null);
+        setOriginalEnv(null);
+      }
+    } catch (e) {
+      console.error("Failed to load .env file:", e);
+    } finally {
+      setLoadingEnv(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEnv();
+  }, [project.path]);
+
+  const handleCreateEnv = async () => {
+    try {
+      await invoke("save_env_file", { projectPath: project.path, entries: [] });
+      await fetchEnv();
+    } catch (e) {
+      console.error("Failed to create .env file:", e);
+    }
+  };
+
+  const handleSaveEnv = async () => {
+    if (!envEntries) return;
+    setSavingEnv(true);
+    try {
+      const cleanEntries = envEntries.filter((e) => e.key.trim() !== "");
+      await invoke("save_env_file", { projectPath: project.path, entries: cleanEntries });
+      setOriginalEnv(JSON.parse(JSON.stringify(cleanEntries)));
+      setEnvEntries(cleanEntries);
+    } catch (e) {
+      console.error("Failed to save .env file:", e);
+    } finally {
+      setSavingEnv(false);
+    }
+  };
+
+  const handleCancelEnv = () => {
+    if (originalEnv) {
+      setEnvEntries(JSON.parse(JSON.stringify(originalEnv)));
+    }
+  };
+
+  const handleAddEnvRow = () => {
+    if (envEntries === null) {
+      setEnvEntries([{ key: "", value: "" }]);
+    } else {
+      setEnvEntries([...envEntries, { key: "", value: "" }]);
+    }
+  };
+
+  const handleUpdateEnvRow = (index: number, field: "key" | "value", val: string) => {
+    if (!envEntries) return;
+    const copy = [...envEntries];
+    copy[index] = { ...copy[index], [field]: val };
+    setEnvEntries(copy);
+  };
+
+  const handleDeleteEnvRow = (index: number) => {
+    if (!envEntries) return;
+    const copy = [...envEntries];
+    copy.splice(index, 1);
+    setEnvEntries(copy);
+  };
+
+  const isEnvChanged = useMemo(() => {
+    if (!envEntries || !originalEnv) return false;
+    return JSON.stringify(envEntries) !== JSON.stringify(originalEnv);
+  }, [envEntries, originalEnv]);
+
+  const isSensitiveKey = (key: string) => {
+    const k = key.toUpperCase();
+    return (
+      k.includes("KEY") ||
+      k.includes("SECRET") ||
+      k.includes("PASSWORD") ||
+      k.includes("TOKEN") ||
+      k.includes("JWT") ||
+      k.includes("AUTH") ||
+      k.includes("PASS")
+    );
+  };
+
+  const toggleKeyVisibility = (key: string) => {
+    setRevealedKeys((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
   const [copiedLogs, setCopiedLogs] = useState(false);
   const terminalEndRef = useRef<HTMLDivElement>(null);
   const consoleContainerRef = useRef<HTMLDivElement>(null);
@@ -559,6 +663,118 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                 </div>
               )}
             </div>
+          </div>
+
+          {/* .env Configuration Card */}
+          <div className="bg-white dark:bg-slate-900/30 rounded-xl border border-slate-200 dark:border-white/5 p-6 shadow-sm space-y-4 relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-[2px] brand-gradient-bg"></div>
+            
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                <FileText className="w-4 h-4 text-slate-400" />
+                <span>Environment Variables (.env)</span>
+              </h3>
+              
+              {envEntries !== null && (
+                <button
+                  onClick={handleAddEnvRow}
+                  className="flex items-center space-x-1 px-2 py-1 text-[10px] bg-slate-50 dark:bg-slate-950/40 text-slate-650 dark:text-slate-350 hover:bg-slate-100 dark:hover:bg-slate-900 border border-slate-200 dark:border-white/5 rounded font-semibold transition-colors"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Add Var</span>
+                </button>
+              )}
+            </div>
+
+            {loadingEnv ? (
+              <div className="py-4 text-center text-xs text-slate-400">Loading .env variables...</div>
+            ) : envEntries === null ? (
+              <div className="py-2 text-center space-y-2">
+                <p className="text-[11px] text-slate-500 font-medium">No .env file found in this project.</p>
+                <button
+                  onClick={handleCreateEnv}
+                  className="px-3 py-1.5 bg-brand-600 text-white rounded-lg text-xs font-bold hover:bg-brand-700 transition-colors"
+                >
+                  Create .env File
+                </button>
+              </div>
+            ) : envEntries.length === 0 ? (
+              <div className="py-4 text-center space-y-2 text-slate-450 dark:text-slate-500">
+                <p className="text-[11px]">The .env file is empty.</p>
+                <button
+                  onClick={handleAddEnvRow}
+                  className="px-3 py-1.5 bg-slate-50 dark:bg-slate-950/60 hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-bold transition-all border border-slate-200 dark:border-white/5"
+                >
+                  Add Your First Variable
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="max-h-64 overflow-y-auto space-y-2.5 pr-1 scrollbar-thin">
+                  {envEntries.map((entry, idx) => {
+                    const sensitive = isSensitiveKey(entry.key);
+                    const visible = revealedKeys[idx.toString()] || false;
+                    return (
+                      <div key={idx} className="flex items-center space-x-2 bg-slate-50/50 dark:bg-slate-950/20 p-2 rounded-lg border border-slate-150/40 dark:border-white/5 relative group/row">
+                        <div className="flex-1 grid grid-cols-2 gap-2">
+                          <input
+                            type="text"
+                            value={entry.key}
+                            onChange={(e) => handleUpdateEnvRow(idx, "key", e.target.value)}
+                            className="bg-transparent border-none text-[11px] font-mono font-semibold text-slate-700 dark:text-slate-200 focus:ring-0 p-0 outline-none placeholder-slate-400"
+                            placeholder="KEY"
+                          />
+                          <div className="flex items-center space-x-1 min-w-0">
+                            <input
+                              type={sensitive && !visible ? "password" : "text"}
+                              value={entry.value}
+                              onChange={(e) => handleUpdateEnvRow(idx, "value", e.target.value)}
+                              className="bg-transparent border-none text-[11px] font-mono text-slate-650 dark:text-slate-350 focus:ring-0 p-0 outline-none w-full placeholder-slate-400 min-w-0"
+                              placeholder="value"
+                            />
+                            {sensitive && (
+                              <button
+                                onClick={() => toggleKeyVisibility(idx.toString())}
+                                className="text-slate-400 hover:text-slate-650 dark:hover:text-slate-200 p-0.5"
+                                title={visible ? "Hide secret" : "Reveal secret"}
+                              >
+                                {visible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => handleDeleteEnvRow(idx)}
+                          className="opacity-0 group-hover/row:opacity-100 text-rose-500 hover:text-rose-700 transition-opacity p-0.5 shrink-0"
+                          title="Delete variable"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {isEnvChanged && (
+                  <div className="flex justify-end space-x-2 pt-2 border-t border-slate-100 dark:border-white/5">
+                    <button
+                      onClick={handleCancelEnv}
+                      className="px-2.5 py-1 text-[11px] text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded font-semibold"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSaveEnv}
+                      disabled={savingEnv}
+                      className="px-2.5 py-1 text-[11px] bg-brand-600 hover:bg-brand-700 text-white rounded font-bold transition-all"
+                    >
+                      {savingEnv ? "Saving..." : "Save Changes"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Custom Actions Card */}
