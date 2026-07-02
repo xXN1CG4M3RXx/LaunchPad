@@ -109,7 +109,7 @@ export const Scripts: React.FC<ScriptsProps> = ({
         setCommand(defaultCmd);
       }
     } catch (e) {
-      console.error("Fehler beim Auswählen der Datei:", e);
+      console.error("Error selecting file:", e);
     }
   };
 

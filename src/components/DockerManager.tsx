@@ -21,7 +21,7 @@ export const DockerManager: React.FC = () => {
       setContainers(list);
     } catch (err: any) {
       console.error(err);
-      setError(err?.toString() || "Fehler beim Laden der Docker-Container");
+      setError(err?.toString() || "Error loading Docker containers");
     } finally {
       setLoading(false);
     }
@@ -40,7 +40,7 @@ export const DockerManager: React.FC = () => {
         fetchLogs(id);
       }
     } catch (err: any) {
-      alert(`Aktion fehlgeschlagen: ${err}`);
+      alert(`Action failed: ${err}`);
     }
   };
 
@@ -50,7 +50,7 @@ export const DockerManager: React.FC = () => {
       const logText = await invoke<string>("get_docker_logs", { id, tail: 100 });
       setLogs(logText);
     } catch (err: any) {
-      setLogs(`Fehler beim Laden der Logs: ${err}`);
+      setLogs(`Error loading logs: ${err}`);
     } finally {
       setLoadingLogs(false);
     }
@@ -74,10 +74,10 @@ export const DockerManager: React.FC = () => {
             <span className="p-2 bg-blue-600 rounded-lg text-white mr-2">
               <Database className="w-6 h-6" />
             </span>
-            Docker Container
+            Docker Containers
           </h1>
           <p className="text-slate-400 text-sm mt-1">
-            Verwalte deine lokalen Docker-Dienste und verfolge deren Logs in Echtzeit.
+            Manage your local Docker containers and stream logs in real time.
           </p>
         </div>
         <button
@@ -86,22 +86,22 @@ export const DockerManager: React.FC = () => {
           className="flex items-center space-x-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2.5 px-4 rounded-xl border border-slate-700 transition-all active:scale-[0.98] disabled:opacity-50"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-          <span>Aktualisieren</span>
+          <span>Refresh</span>
         </button>
       </div>
 
       {error ? (
         <div className="glassmorphism p-6 rounded-2xl border border-red-500/20 bg-red-500/5 flex flex-col items-center justify-center text-center space-y-3">
           <AlertTriangle className="w-12 h-12 text-red-400" />
-          <h3 className="text-lg font-bold text-red-200">Docker Verbindung fehlgeschlagen</h3>
+          <h3 className="text-lg font-bold text-red-200">Docker Connection Failed</h3>
           <p className="text-slate-400 max-w-md text-sm">
-            Der Docker-Daemon läuft eventuell nicht oder die CLI ist nicht im Systempfad (PATH) konfiguriert. Stelle sicher, dass Docker Desktop oder die Docker Engine aktiv ist.
+            The Docker daemon may not be running or the CLI is not configured in the system PATH. Make sure Docker Desktop or the Docker Engine is active.
           </p>
           <button
             onClick={fetchContainers}
             className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-xl text-sm transition-all"
           >
-            Erneut versuchen
+            Retry
           </button>
         </div>
       ) : containers.length === 0 ? (
@@ -109,9 +109,9 @@ export const DockerManager: React.FC = () => {
           <div className="w-16 h-16 bg-slate-800/60 rounded-full flex items-center justify-center mx-auto text-slate-400">
             <Database className="w-8 h-8" />
           </div>
-          <h3 className="text-lg font-bold text-slate-200">Keine Container gefunden</h3>
+          <h3 className="text-lg font-bold text-slate-200">No Containers Found</h3>
           <p className="text-slate-400 max-w-sm mx-auto text-sm">
-            Es wurden keine lokalen Docker-Container auf deinem System gefunden.
+            No local Docker containers were found on your system.
           </p>
         </div>
       ) : (
@@ -124,7 +124,7 @@ export const DockerManager: React.FC = () => {
                   <th className="py-4 px-6">Image</th>
                   <th className="py-4 px-6">Status</th>
                   <th className="py-4 px-6">Ports</th>
-                  <th className="py-4 px-6 text-right">Aktionen</th>
+                  <th className="py-4 px-6 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-850">
@@ -158,14 +158,14 @@ export const DockerManager: React.FC = () => {
                             <>
                               <button
                                 onClick={() => handleAction(c.id, "stop")}
-                                title="Container stoppen"
+                                title="Stop Container"
                                 className="p-2 bg-slate-800 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/20 text-slate-400 rounded-lg border border-slate-700 transition-colors"
                               >
                                 <Square className="w-4 h-4 fill-current" />
                               </button>
                               <button
                                 onClick={() => handleAction(c.id, "restart")}
-                                title="Container neu starten"
+                                title="Restart Container"
                                 className="p-2 bg-slate-800 hover:bg-blue-500/10 hover:text-blue-400 hover:border-blue-500/20 text-slate-400 rounded-lg border border-slate-700 transition-colors"
                               >
                                 <RotateCw className="w-4 h-4" />
@@ -174,7 +174,7 @@ export const DockerManager: React.FC = () => {
                           ) : (
                             <button
                               onClick={() => handleAction(c.id, "start")}
-                              title="Container starten"
+                              title="Start Container"
                               className="p-2 bg-emerald-600/10 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/20 hover:border-emerald-600 rounded-lg transition-colors"
                             >
                               <Play className="w-4 h-4 fill-current" />
@@ -182,7 +182,7 @@ export const DockerManager: React.FC = () => {
                           )}
                           <button
                             onClick={() => openLogs(c)}
-                            title="Logs anzeigen"
+                            title="View Logs"
                             className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-lg border border-slate-700 transition-colors"
                           >
                             <Terminal className="w-4 h-4" />
@@ -213,7 +213,7 @@ export const DockerManager: React.FC = () => {
                 onClick={() => fetchLogs(logContainer.id)}
                 disabled={loadingLogs}
                 className="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded-lg transition-colors"
-                title="Logs aktualisieren"
+                title="Refresh Logs"
               >
                 <RefreshCw className={`w-4 h-4 ${loadingLogs ? "animate-spin" : ""}`} />
               </button>
@@ -229,12 +229,12 @@ export const DockerManager: React.FC = () => {
             {loadingLogs && !logs ? (
               <div className="flex items-center justify-center h-full text-slate-500">
                 <RefreshCw className="w-5 h-5 animate-spin mr-2" />
-                Lade Logs...
+                Loading Logs...
               </div>
             ) : logs ? (
               logs
             ) : (
-              <div className="text-slate-500 italic">Keine Log-Ausgabe vorhanden.</div>
+              <div className="text-slate-500 italic">No log output available.</div>
             )}
           </div>
         </div>

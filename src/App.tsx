@@ -66,10 +66,10 @@ function App() {
     try {
       await invoke("send_stdin", { projectPath, text });
     } catch (e) {
-      console.error("Fehler beim Senden von stdin:", e);
+      console.error("Error sending stdin:", e);
       setProjectLogs((prev) => ({
         ...prev,
-        [projectPath]: [...(prev[projectPath] || []), `[Fehler beim Senden an stdin: ${e}]`],
+        [projectPath]: [...(prev[projectPath] || []), `[Error sending to stdin: ${e}]`],
       }));
     }
   };
@@ -139,7 +139,7 @@ function App() {
           unlistenStopped = uStopped;
         }
       } catch (e) {
-        console.error("Fehler beim Einrichten der globalen Event-Listener:", e);
+        console.error("Error setting up global event listeners:", e);
       }
     };
 
@@ -155,7 +155,7 @@ function App() {
           scanProjects(loadedConfig.dev_dir, loadedConfig.scan_depth || 2);
         }
       } catch (e) {
-        console.error("Fehler beim Laden der Konfiguration:", e);
+        console.error("Error loading configuration:", e);
       }
     };
     loadConfig();
@@ -198,7 +198,7 @@ function App() {
       }
       setRunningProjects(statusMap);
     } catch (e) {
-      console.error("Fehler beim Scannen der Projekte:", e);
+      console.error("Error scanning projects:", e);
     } finally {
       setIsScanning(false);
     }
@@ -218,7 +218,7 @@ function App() {
         setRunningProjects({});
       }
     } catch (e) {
-      console.error("Fehler beim Speichern der Konfiguration:", e);
+      console.error("Error saving configuration:", e);
     }
   };
 
@@ -236,7 +236,7 @@ function App() {
         handleSaveConfig(newConfig);
       }
     } catch (e) {
-      console.error("Fehler beim Auswählen des Ordners:", e);
+      console.error("Error selecting folder:", e);
     }
   };
 
@@ -261,14 +261,14 @@ function App() {
     try {
       await invoke("start_project", { projectPath, command });
     } catch (e) {
-      console.error("Fehler beim Starten des Projekts:", e);
+      console.error("Error starting project:", e);
       setRunningProjects((prev) => ({
         ...prev,
         [projectPath]: false,
       }));
       setProjectLogs((prev) => ({
         ...prev,
-        [projectPath]: [...(prev[projectPath] || []), `[Fehler beim Starten: ${e}]`],
+        [projectPath]: [...(prev[projectPath] || []), `[Error starting: ${e}]`],
       }));
     }
   };
@@ -282,7 +282,7 @@ function App() {
         [projectPath]: false,
       }));
     } catch (e) {
-      console.error("Fehler beim Stoppen des Projekts:", e);
+      console.error("Error stopping project:", e);
     }
   };
 

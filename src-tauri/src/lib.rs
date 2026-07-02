@@ -115,7 +115,7 @@ fn save_config(config: AppConfig) -> Result<(), String> {
 
 #[tauri::command]
 fn select_directory(current_dir: Option<String>) -> Option<String> {
-    let mut dialog = rfd::FileDialog::new().set_title("Wähle Entwicklungsordner");
+    let mut dialog = rfd::FileDialog::new().set_title("Select Development Directory");
     if let Some(curr) = current_dir {
         if std::path::Path::new(&curr).exists() {
             dialog = dialog.set_directory(curr);
@@ -220,7 +220,7 @@ fn scan_dir_recursive(
         let name = dir
             .file_name()
             .map(|n| n.to_string_lossy().to_string())
-            .unwrap_or_else(|| "Unbekannt".to_string());
+            .unwrap_or_else(|| "Unknown".to_string());
         let path_str = dir.to_string_lossy().to_string();
         let git_branch = get_git_branch(dir);
 
@@ -272,7 +272,7 @@ fn get_git_branch(dir: &std::path::Path) -> Option<String> {
 fn scan_projects(dev_dir: String, scan_depth: Option<usize>) -> Result<Vec<ProjectInfo>, String> {
     let path = std::path::Path::new(&dev_dir);
     if !path.exists() || !path.is_dir() {
-        return Err("Ordner existiert nicht".to_string());
+        return Err("Directory does not exist".to_string());
     }
     let depth = scan_depth.unwrap_or(2);
     let mut projects = Vec::new();
@@ -295,7 +295,7 @@ struct StoppedPayload {
 #[tauri::command]
 fn select_file() -> Option<String> {
     rfd::FileDialog::new()
-        .set_title("Script-Datei auswählen")
+        .set_title("Select Script File")
         .pick_file()
         .map(|p| p.to_string_lossy().to_string())
 }
@@ -314,7 +314,7 @@ fn send_stdin(
         stdin.flush().map_err(|e| e.to_string())?;
         Ok(())
     } else {
-        Err("Prozess läuft nicht oder hat keinen Standard-Input-Stream".to_string())
+        Err("Process is not running or does not have a standard input stream".to_string())
     }
 }
 
@@ -363,15 +363,15 @@ fn start_project(
         cmd.arg(&command);
     }
 
-    let mut child = cmd.spawn().map_err(|e| format!("Fehler beim Starten des Befehls: {}", e))?;
+    let mut child = cmd.spawn().map_err(|e| format!("Error starting command: {}", e))?;
     let pid = child.id();
     running.insert(project_path.clone(), pid);
     if let Some(stdin) = child.stdin.take() {
         state.stdin_writers.lock().unwrap().insert(project_path.clone(), stdin);
     }
 
-    let stdout = child.stdout.take().ok_or("Fehler beim Öffnen von stdout")?;
-    let stderr = child.stderr.take().ok_or("Fehler beim Öffnen von stderr")?;
+    let stdout = child.stdout.take().ok_or("Error opening stdout")?;
+    let stderr = child.stderr.take().ok_or("Error opening stderr")?;
 
     let project_path_clone = project_path.clone();
     let app_handle_clone = app_handle.clone();
@@ -445,7 +445,7 @@ fn start_project(
         
         let _ = app_handle_clone.emit("project-log", LogPayload {
             project_path: stdout_path.clone(),
-            text: format!("\n[Prozess mit Code {} beendet]", code),
+            text: format!("\n[Process terminated with code {}]", code),
         });
     });
 
@@ -463,7 +463,7 @@ fn stop_project(
         kill_process_tree(pid);
         Ok(())
     } else {
-        Err("Prozess läuft nicht".to_string())
+        Err("Process is not running".to_string())
     }
 }
 
@@ -507,7 +507,7 @@ fn open_in_ide(project_path: String, editor: Option<String>) -> Result<(), Strin
         cmd.creation_flags(0x08000000);
     }
     
-    cmd.spawn().map_err(|e| format!("Fehler beim Öffnen der IDE: {}", e))?;
+    cmd.spawn().map_err(|e| format!("Error opening IDE: {}", e))?;
     Ok(())
 }
 
@@ -522,7 +522,7 @@ fn open_in_explorer(project_path: String) -> Result<(), String> {
         cmd.creation_flags(0x08000000);
     }
     
-    cmd.spawn().map_err(|e| format!("Fehler beim Öffnen des Explorers: {}", e))?;
+    cmd.spawn().map_err(|e| format!("Error opening Explorer: {}", e))?;
     Ok(())
 }
 
@@ -575,7 +575,7 @@ fn open_in_browser(url: String) -> Result<(), String> {
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
     
-    cmd.spawn().map_err(|e| format!("Fehler beim Öffnen des Browsers: {}", e))?;
+    cmd.spawn().map_err(|e| format!("Error opening browser: {}", e))?;
     Ok(())
 }
 
@@ -644,9 +644,9 @@ fn get_active_ports() -> Result<Vec<ActivePort>, String> {
 
         netstat_cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
 
-        let output = netstat_cmd.output().map_err(|e| format!("Fehler beim Ausführen von netstat: {}", e))?;
+        let output = netstat_cmd.output().map_err(|e| format!("Error running netstat: {}", e))?;
         if !output.status.success() {
-            return Err("netstat-Befehl fehlgeschlagen".to_string());
+            return Err("netstat command failed".to_string());
         }
 
         let stdout = String::from_utf8_lossy(&output.stdout);
@@ -665,7 +665,7 @@ fn get_active_ports() -> Result<Vec<ActivePort>, String> {
                         let port_str = &local_addr[port_idx + 1..];
                         if let Ok(port) = port_str.parse::<u16>() {
                             if let Ok(pid) = pid_str.parse::<u32>() {
-                                let process_name = process_map.get(&pid).cloned().unwrap_or_else(|| "Unbekannt".to_string());
+                                let process_name = process_map.get(&pid).cloned().unwrap_or_else(|| "Unknown".to_string());
                                 raw_ports.push(ActivePort {
                                     port,
                                     pid,
@@ -701,13 +701,13 @@ fn get_active_ports() -> Result<Vec<ActivePort>, String> {
 #[tauri::command]
 fn save_log_file(default_name: String, content: String) -> Result<bool, String> {
     let file_path = rfd::FileDialog::new()
-        .set_title("Log-Datei speichern")
+        .set_title("Save Log File")
         .set_file_name(&default_name)
-        .add_filter("Log-Dateien", &["log", "txt"])
+        .add_filter("Log Files", &["log", "txt"])
         .save_file();
 
     if let Some(path) = file_path {
-        std::fs::write(&path, content).map_err(|e| format!("Fehler beim Schreiben der Log-Datei: {}", e))?;
+        std::fs::write(&path, content).map_err(|e| format!("Error writing log file: {}", e))?;
         Ok(true)
     } else {
         Ok(false)
@@ -721,7 +721,7 @@ fn read_env_file(project_path: String) -> Result<Option<Vec<EnvEntry>>, String> 
         return Ok(None);
     }
 
-    let content = std::fs::read_to_string(&env_path).map_err(|e| format!("Fehler beim Lesen der .env-Datei: {}", e))?;
+    let content = std::fs::read_to_string(&env_path).map_err(|e| format!("Error reading .env file: {}", e))?;
     let mut entries = Vec::new();
 
     for line in content.lines() {
@@ -759,7 +759,7 @@ fn save_env_file(project_path: String, entries: Vec<EnvEntry>) -> Result<(), Str
     let mut new_lines = Vec::new();
 
     if env_path.exists() {
-        let content = std::fs::read_to_string(&env_path).map_err(|e| format!("Fehler beim Lesen der .env-Datei: {}", e))?;
+        let content = std::fs::read_to_string(&env_path).map_err(|e| format!("Error reading .env file: {}", e))?;
         for line in content.lines() {
             if let Some(eq_idx) = line.find('=') {
                 let left_part = &line[..eq_idx];
@@ -789,9 +789,9 @@ fn save_env_file(project_path: String, entries: Vec<EnvEntry>) -> Result<(), Str
     }
 
     // Write back
-    let mut file = std::fs::File::create(&env_path).map_err(|e| format!("Fehler beim Erstellen der .env-Datei: {}", e))?;
+    let mut file = std::fs::File::create(&env_path).map_err(|e| format!("Error creating .env file: {}", e))?;
     for line in new_lines {
-        writeln!(file, "{}", line).map_err(|e| format!("Fehler beim Schreiben der .env-Datei: {}", e))?;
+        writeln!(file, "{}", line).map_err(|e| format!("Error writing .env file: {}", e))?;
     }
 
     Ok(())
@@ -827,9 +827,9 @@ async fn get_docker_containers() -> Result<Vec<DockerContainer>, String> {
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
 
-    let output = cmd.output().map_err(|e| format!("Fehler beim Ausführen von docker ps: {}", e))?;
+    let output = cmd.output().map_err(|e| format!("Error running docker ps: {}", e))?;
     if !output.status.success() {
-        return Err("Docker-Dienst läuft eventuell nicht oder ist nicht installiert".to_string());
+        return Err("Docker service may not be running or is not installed".to_string());
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -856,7 +856,7 @@ async fn manage_docker_container(id: String, action: String) -> Result<(), Strin
         "start" => cmd.args(&["start", &id]),
         "stop" => cmd.args(&["stop", &id]),
         "restart" => cmd.args(&["restart", &id]),
-        _ => return Err("Ungültige Docker-Aktion".to_string()),
+        _ => return Err("Invalid Docker action".to_string()),
     };
 
     #[cfg(windows)]
@@ -865,10 +865,10 @@ async fn manage_docker_container(id: String, action: String) -> Result<(), Strin
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
 
-    let output = cmd.output().map_err(|e| format!("Fehler bei Docker-Aktion: {}", e))?;
+    let output = cmd.output().map_err(|e| format!("Error in Docker action: {}", e))?;
     if !output.status.success() {
         let error_msg = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("Docker-Aktion fehlgeschlagen: {}", error_msg.trim()));
+        return Err(format!("Docker action failed: {}", error_msg.trim()));
     }
     Ok(())
 }
@@ -885,7 +885,7 @@ async fn get_docker_logs(id: String, tail: Option<usize>) -> Result<String, Stri
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
 
-    let output = cmd.output().map_err(|e| format!("Fehler beim Laden der Docker-Logs: {}", e))?;
+    let output = cmd.output().map_err(|e| format!("Error loading Docker logs: {}", e))?;
     let stdout = String::from_utf8_lossy(&output.stdout);
     let stderr = String::from_utf8_lossy(&output.stderr);
     
@@ -915,7 +915,7 @@ async fn send_http_request(
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(30))
         .build()
-        .map_err(|e| format!("Fehler beim Erstellen des HTTP-Clients: {}", e))?;
+        .map_err(|e| format!("Error creating HTTP client: {}", e))?;
 
     let req_method = match method.to_uppercase().as_str() {
         "GET" => reqwest::Method::GET,
@@ -925,7 +925,7 @@ async fn send_http_request(
         "PATCH" => reqwest::Method::PATCH,
         "HEAD" => reqwest::Method::HEAD,
         "OPTIONS" => reqwest::Method::OPTIONS,
-        _ => return Err(format!("Ungültige HTTP-Methode: {}", method)),
+        _ => return Err(format!("Invalid HTTP method: {}", method)),
     };
 
     let mut req_builder = client.request(req_method, &url);
@@ -947,7 +947,7 @@ async fn send_http_request(
     }
 
     let start = Instant::now();
-    let res = req_builder.send().await.map_err(|e| format!("HTTP-Anfrage fehlgeschlagen: {}", e))?;
+    let res = req_builder.send().await.map_err(|e| format!("HTTP request failed: {}", e))?;
     let elapsed = start.elapsed().as_millis() as u64;
 
     let status = res.status().as_u16();

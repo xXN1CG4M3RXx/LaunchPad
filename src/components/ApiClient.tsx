@@ -137,7 +137,7 @@ export const ApiClient: React.FC<ApiClientProps> = ({ projects, config }) => {
         body
       });
     } catch (err: any) {
-      setError(err?.toString() || "Ein Fehler ist aufgetreten.");
+      setError(err?.toString() || "An error occurred.");
     } finally {
       setSending(false);
     }
@@ -192,7 +192,7 @@ export const ApiClient: React.FC<ApiClientProps> = ({ projects, config }) => {
           </span>
           <div>
             <h1 className="text-3xl font-black tracking-wider text-slate-100">API Client</h1>
-            <p className="text-slate-400 text-sm mt-1">Sende REST-Anfragen an deine lokalen Server und Services.</p>
+            <p className="text-slate-400 text-sm mt-1">Send REST requests to your local servers and services.</p>
           </div>
         </div>
 
@@ -246,7 +246,7 @@ export const ApiClient: React.FC<ApiClientProps> = ({ projects, config }) => {
               className="flex items-center space-x-2 bg-brand-600 hover:bg-brand-500 disabled:opacity-50 text-white font-bold px-6 py-2.5 rounded-xl transition-all active:scale-[0.98]"
             >
               {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              <span>Senden</span>
+              <span>Send</span>
             </button>
           </div>
 
@@ -254,14 +254,14 @@ export const ApiClient: React.FC<ApiClientProps> = ({ projects, config }) => {
           <div className="space-y-4 pt-2">
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Header-Parameter</span>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Header Parameters</span>
                 <button
                   type="button"
                   onClick={handleAddHeader}
                   className="flex items-center space-x-1 text-xs text-brand-400 hover:text-brand-300 font-semibold"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Header hinzufügen</span>
+                  <span>Add Header</span>
                 </button>
               </div>
               <div className="space-y-2">
@@ -277,7 +277,7 @@ export const ApiClient: React.FC<ApiClientProps> = ({ projects, config }) => {
                     <input
                       type="text"
                       value={h.value}
-                      placeholder="Header Wert"
+                      placeholder="Header Value"
                       onChange={(e) => handleUpdateHeader(idx, "value", e.target.value)}
                       className="flex-1 bg-slate-900/60 border border-slate-850 rounded-lg px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-slate-700"
                     />
@@ -313,7 +313,7 @@ export const ApiClient: React.FC<ApiClientProps> = ({ projects, config }) => {
         {/* Response Panel */}
         {error && (
           <div className="glassmorphism p-5 rounded-2xl border border-red-500/20 bg-red-500/5 text-sm text-red-400">
-            <strong>Anfrage fehlgeschlagen:</strong> {error}
+            <strong>Request failed:</strong> {error}
           </div>
         )}
 
@@ -340,7 +340,7 @@ export const ApiClient: React.FC<ApiClientProps> = ({ projects, config }) => {
                   className="flex items-center space-x-1 text-xs text-slate-400 hover:text-slate-200 bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700 transition-colors"
                 >
                   {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copied ? "Kopiert" : "Kopieren"}</span>
+                  <span>{copied ? "Copied" : "Copy"}</span>
                 </button>
               </div>
             </div>
@@ -351,7 +351,7 @@ export const ApiClient: React.FC<ApiClientProps> = ({ projects, config }) => {
                 onClick={() => setShowHeaders(!showHeaders)}
                 className="w-full px-6 py-3 flex items-center justify-between text-xs font-semibold text-slate-400 hover:bg-slate-900/20 transition-colors"
               >
-                <span>Antwort-Header ({Object.keys(response.headers).length})</span>
+                <span>Response Headers ({Object.keys(response.headers).length})</span>
                 {showHeaders ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </button>
               {showHeaders && (
@@ -368,7 +368,7 @@ export const ApiClient: React.FC<ApiClientProps> = ({ projects, config }) => {
 
             {/* Response Body Stream */}
             <div className="flex-1 bg-slate-950 p-6 overflow-y-auto font-mono text-xs text-slate-300 select-text whitespace-pre-wrap leading-relaxed">
-              {formattedBody || <span className="text-slate-500 italic">Kein Inhalt zurückgegeben.</span>}
+              {formattedBody || <span className="text-slate-500 italic">No content returned.</span>}
             </div>
           </div>
         )}
@@ -379,20 +379,20 @@ export const ApiClient: React.FC<ApiClientProps> = ({ projects, config }) => {
         <div className="flex items-center justify-between mb-4 border-b border-slate-850 pb-3">
           <span className="font-bold text-sm text-slate-200 flex items-center space-x-1.5">
             <History className="w-4 h-4 text-brand-400" />
-            <span>Verlauf</span>
+            <span>History</span>
           </span>
           {history.length > 0 && (
             <button
               onClick={clearHistory}
               className="text-[10px] text-rose-400 hover:text-rose-300 font-semibold"
             >
-              Leeren
+              Clear
             </button>
           )}
         </div>
         <div className="flex-1 overflow-y-auto space-y-2 pr-1">
           {history.length === 0 ? (
-            <div className="text-xs text-slate-500 text-center py-8 italic">Keine vorherigen Anfragen.</div>
+            <div className="text-xs text-slate-500 text-center py-8 italic">No previous requests.</div>
           ) : (
             history.map((req) => (
               <button
