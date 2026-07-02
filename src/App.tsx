@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
-import { Rocket, FolderKanban, Settings as SettingsIcon, Terminal, FileCode, CheckCircle2, Plug, Database, Globe } from "lucide-react";
+import { Rocket, FolderKanban, Settings as SettingsIcon, Terminal, FileCode, CheckCircle2, Plug, Database, Globe, Cpu } from "lucide-react";
 
 import { AppConfig, ProjectInfo } from "./types";
 import { Dashboard } from "./components/Dashboard";
@@ -12,9 +12,10 @@ import { Scripts } from "./components/Scripts";
 import { PortsManager } from "./components/PortsManager";
 import { DockerManager } from "./components/DockerManager";
 import { ApiClient } from "./components/ApiClient";
+import { PerformanceMonitor } from "./components/PerformanceMonitor";
 
 function App() {
-  const [activeTab, setActiveTab] = useState<"dashboard" | "settings" | "scripts" | "ports" | "docker" | "api-client">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "settings" | "scripts" | "ports" | "docker" | "api-client" | "performance">("dashboard");
   const [config, setConfig] = useState<AppConfig>({
     dev_dir: null,
     scan_depth: 2,
@@ -333,6 +334,18 @@ function App() {
           </button>
 
           <button
+            onClick={() => setActiveTab("performance")}
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all active:scale-[0.98] ${
+              activeTab === "performance"
+                ? "bg-brand-600 text-white shadow-md shadow-brand-900/10"
+                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+            }`}
+          >
+            <Cpu className="w-4.5 h-4.5" />
+            <span>Performance</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab("docker")}
             className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all active:scale-[0.98] ${
               activeTab === "docker"
@@ -462,6 +475,8 @@ function App() {
                 isScanning={isScanning}
               />
             )
+          ) : activeTab === "performance" ? (
+            <PerformanceMonitor />
           ) : activeTab === "docker" ? (
             <DockerManager />
           ) : activeTab === "api-client" ? (

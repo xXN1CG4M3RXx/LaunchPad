@@ -974,6 +974,71 @@ async fn send_http_request(
     })
 }
 
+#[derive(Serialize)]
+pub struct ProcessSnapshot {
+    pub pid: u32,
+    pub name: String,
+    pub cpu_usage: f32,
+    pub memory_mb: u64,
+}
+
+#[derive(Serialize)]
+pub struct PerformanceSnapshot {
+    pub total_cpu: f32,
+    pub memory_used_percent: f32,
+    pub memory_used_gb: f64,
+    pub memory_total_gb: f64,
+    pub processes: Vec<ProcessSnapshot>,
+}
+
+pub struct PerformanceState {
+    pub system: Mutex<sysinfo::System>,
+}
+
+#[tauri::command]
+fn get_performance_snapshot(state: tauri::State<'_, PerformanceState>) -> PerformanceSnapshot {
+    let mut sys = state.system.lock().unwrap();
+    sys.refresh_cpu();
+    sys.refresh_memory();
+    sys.refresh_processes();
+
+    let total_cpu = sys.global_cpu_info().cpu_usage();
+    let used_memory = sys.used_memory();
+    let total_memory = sys.total_memory();
+    let memory_used_percent = if total_memory > 0 {
+        (used_memory as f32 / total_memory as f32) * 100.0
+    } else {
+        0.0
+    };
+    
+    let memory_used_gb = used_memory as f64 / 1024.0 / 1024.0 / 1024.0;
+    let memory_total_gb = total_memory as f64 / 1024.0 / 1024.0 / 1024.0;
+
+    let mut processes = Vec::new();
+    for (pid, process) in sys.processes() {
+        processes.push(ProcessSnapshot {
+            pid: pid.as_u32(),
+            name: process.name().to_string(),
+            cpu_usage: process.cpu_usage(),
+            memory_mb: process.memory() / 1024 / 1024,
+        });
+    }
+
+    processes.sort_by(|a, b| {
+        b.cpu_usage.partial_cmp(&a.cpu_usage)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| b.memory_mb.cmp(&a.memory_mb))
+    });
+
+    PerformanceSnapshot {
+        total_cpu,
+        memory_used_percent,
+        memory_used_gb,
+        memory_total_gb,
+        processes,
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -981,6 +1046,9 @@ pub fn run() {
         .manage(ProcessState {
             running_processes: Arc::new(Mutex::new(HashMap::new())),
             stdin_writers: Arc::new(Mutex::new(HashMap::new())),
+        })
+        .manage(PerformanceState {
+            system: Mutex::new(sysinfo::System::new_all()),
         })
         .invoke_handler(tauri::generate_handler![
             get_config,
@@ -1005,7 +1073,8 @@ pub fn run() {
             get_docker_containers,
             manage_docker_container,
             get_docker_logs,
-            send_http_request
+            send_http_request,
+            get_performance_snapshot
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

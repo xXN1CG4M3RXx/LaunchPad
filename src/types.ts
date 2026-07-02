@@ -71,3 +71,18 @@ export interface HttpResponse {
   elapsed_ms: number;
   size_bytes: number;
 }
+
+export interface ProcessSnapshot {
+  pid: number;
+  name: string;
+  cpu_usage: number;
+  memory_mb: number;
+}
+
+export interface PerformanceSnapshot {
+  total_cpu: number;
+  memory_used_percent: number;
+  memory_used_gb: number;
+  memory_total_gb: number;
+  processes: ProcessSnapshot[];
+}
