@@ -2,7 +2,8 @@ import React, { useEffect, useState, useRef, useMemo } from "react";
 import { 
   ChevronLeft, Play, Square, Code, Folder, 
   Terminal, Trash2, Copy, GitBranch, AlertCircle, CheckCircle2, RefreshCw, Globe,
-  Plus, Edit2, AlertTriangle, Eye, EyeOff, FileText
+  Plus, Edit2, AlertTriangle, Eye, EyeOff, FileText,
+  Search, ArrowUp, ArrowDown, Download, X
 } from "lucide-react";
 import { ProjectInfo, AppConfig, GitDetails, ActivePort, EnvEntry } from "../types";
 import { invoke } from "@tauri-apps/api/core";
@@ -226,6 +227,92 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
 
   const toggleKeyVisibility = (key: string) => {
     setRevealedKeys((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // Log Search, Highlight, Grep Filter & Export states
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [grepMode, setGrepMode] = useState(false);
+  const [currentMatchIdx, setCurrentMatchIdx] = useState(0);
+
+  useEffect(() => {
+    setCurrentMatchIdx(0);
+  }, [searchQuery]);
+
+  const totalMatches = useMemo(() => {
+    if (!searchQuery) return 0;
+    let count = 0;
+    const queryLower = searchQuery.toLowerCase();
+    for (const log of logs) {
+      const clean = stripAnsi(log).toLowerCase();
+      if (grepMode && !clean.includes(queryLower)) continue;
+      const occurrences = clean.split(queryLower).length - 1;
+      count += occurrences;
+    }
+    return count;
+  }, [logs, searchQuery, grepMode]);
+
+  const handleJumpToMatch = (direction: "up" | "down", matchCount: number) => {
+    if (matchCount === 0) return;
+    let nextIdx = currentMatchIdx;
+    if (direction === "down") {
+      nextIdx = (currentMatchIdx + 1) % matchCount;
+    } else {
+      nextIdx = (currentMatchIdx - 1 + matchCount) % matchCount;
+    }
+    setCurrentMatchIdx(nextIdx);
+
+    const elements = document.querySelectorAll("[data-log-match]");
+    if (elements && elements[nextIdx]) {
+      elements[nextIdx].scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+  };
+
+  const highlightText = (text: string, query: string) => {
+    if (!query) return <span>{text}</span>;
+    const parts = text.split(new RegExp(`(${query.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, "gi"));
+    return (
+      <span>
+        {parts.map((part, i) => {
+          const isMatch = part.toLowerCase() === query.toLowerCase();
+          if (isMatch) {
+            return (
+              <mark
+                key={i}
+                data-log-match="true"
+                className="bg-amber-500/35 text-white rounded px-0.5 font-bold transition-colors"
+              >
+                {part}
+              </mark>
+            );
+          }
+          return <span key={i}>{part}</span>;
+        })}
+      </span>
+    );
+  };
+
+  useEffect(() => {
+    const elements = document.querySelectorAll("[data-log-match]");
+    elements.forEach((el, idx) => {
+      if (idx === currentMatchIdx) {
+        el.classList.add("bg-orange-500", "text-white");
+        el.classList.remove("bg-amber-500/35");
+      } else {
+         el.classList.remove("bg-orange-500");
+         el.classList.add("bg-amber-500/35");
+      }
+    });
+  }, [currentMatchIdx, searchQuery, grepMode, logs]);
+
+  const handleExportLogs = async () => {
+    try {
+      const cleanText = logs.map(l => stripAnsi(l)).join("\n");
+      const defaultName = `${project.name.toLowerCase().replace(/[^a-z0-9]/g, "_")}_console.log`;
+      await invoke("save_log_file", { defaultName, content: cleanText });
+    } catch (e) {
+      console.error("Failed to export logs:", e);
+    }
   };
 
   const [copiedLogs, setCopiedLogs] = useState(false);
@@ -997,9 +1084,79 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
           
           {/* Console Header */}
           <div className="flex items-center justify-between px-6 py-4 bg-slate-900 border-b border-slate-900">
-            <div className="flex items-center space-x-2">
-              <Terminal className="w-4 h-4 text-brand-400" />
-              <h3 className="text-sm font-semibold tracking-wide text-white">Console Output</h3>
+            <div className="flex items-center space-x-4 flex-1 min-w-0">
+              <div className="flex items-center space-x-2 shrink-0">
+                <Terminal className="w-4 h-4 text-brand-400" />
+                <h3 className="text-sm font-semibold tracking-wide text-white">Console Output</h3>
+              </div>
+
+              {isSearchOpen ? (
+                <div className="flex items-center space-x-2 bg-slate-950/80 border border-slate-800 px-2.5 py-1 rounded-lg flex-1 max-w-xs animate-in slide-in-from-left-2 duration-200">
+                  <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="bg-transparent border-none text-xs text-slate-205 focus:ring-0 p-0 outline-none w-full placeholder-slate-500 font-mono"
+                    placeholder="Search logs..."
+                    autoFocus
+                  />
+                  {searchQuery && (
+                    <span className="text-[10px] font-mono text-slate-500 shrink-0 select-none">
+                      {totalMatches > 0 ? `${currentMatchIdx + 1}/${totalMatches}` : "0/0"}
+                    </span>
+                  )}
+                  {totalMatches > 0 && (
+                    <div className="flex items-center space-x-0.5 border-l border-slate-800 pl-1.5 shrink-0">
+                      <button
+                        onClick={() => handleJumpToMatch("up", totalMatches)}
+                        className="text-slate-400 hover:text-white p-0.5"
+                      >
+                        <ArrowUp className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => handleJumpToMatch("down", totalMatches)}
+                        className="text-slate-400 hover:text-white p-0.5"
+                      >
+                        <ArrowDown className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => {
+                      setIsSearchOpen(false);
+                      setSearchQuery("");
+                      setGrepMode(false);
+                    }}
+                    className="text-slate-400 hover:text-white p-0.5 shrink-0"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setIsSearchOpen(true)}
+                  className="flex items-center space-x-1 px-2.5 py-1 text-[11px] text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800 rounded-md transition-colors"
+                  title="Search terminal logs"
+                >
+                  <Search className="w-3 h-3" />
+                  <span>Search</span>
+                </button>
+              )}
+
+              {isSearchOpen && searchQuery && (
+                <button
+                  onClick={() => setGrepMode(!grepMode)}
+                  className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md border transition-all ${
+                    grepMode
+                      ? "bg-brand-650/15 text-brand-400 border-brand-500/30"
+                      : "text-slate-400 hover:text-white border-slate-800 hover:bg-slate-800"
+                  }`}
+                  title="Only show lines matching query"
+                >
+                  Grep Filter
+                </button>
+              )}
             </div>
 
             <div className="flex items-center space-x-2">
@@ -1012,6 +1169,15 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                 />
                 <span>Auto-Scroll</span>
               </label>
+
+              <button
+                onClick={handleExportLogs}
+                className="flex items-center space-x-1 px-2.5 py-1 text-[11px] text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800 rounded-md transition-colors"
+                title="Export logs to file"
+              >
+                <Download className="w-3 h-3" />
+                <span>Export</span>
+              </button>
 
               <button
                 onClick={copyToClipboard}
@@ -1044,25 +1210,30 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                 <p className="text-[10px] opacity-70">Click "Start Server" on the left to see logs.</p>
               </div>
             ) : (
-              logs.map((log, index) => {
-                const cleanLog = stripAnsi(log);
-                let textClass = "text-slate-350";
-                if (cleanLog.toLowerCase().includes("error") || cleanLog.toLowerCase().includes("failed") || cleanLog.startsWith("[Prozess mit Code") || cleanLog.startsWith("[Process exited")) {
-                  textClass = "text-rose-400";
-                } else if (cleanLog.toLowerCase().includes("warning") || cleanLog.toLowerCase().includes("warn")) {
-                  textClass = "text-amber-400";
-                } else if (cleanLog.toLowerCase().includes("success") || cleanLog.toLowerCase().includes("compiled successfully") || cleanLog.toLowerCase().includes("ready in")) {
-                  textClass = "text-emerald-400";
-                } else if (cleanLog.startsWith("> ")) {
-                  textClass = "text-brand-400 font-semibold";
-                }
+              logs
+                .filter((log) => {
+                  if (!grepMode || !searchQuery) return true;
+                  return stripAnsi(log).toLowerCase().includes(searchQuery.toLowerCase());
+                })
+                .map((log, index) => {
+                  const cleanLog = stripAnsi(log);
+                  let textClass = "text-slate-350";
+                  if (cleanLog.toLowerCase().includes("error") || cleanLog.toLowerCase().includes("failed") || cleanLog.startsWith("[Prozess mit Code") || cleanLog.startsWith("[Process exited")) {
+                    textClass = "text-rose-400";
+                  } else if (cleanLog.toLowerCase().includes("warning") || cleanLog.toLowerCase().includes("warn")) {
+                    textClass = "text-amber-400";
+                  } else if (cleanLog.toLowerCase().includes("success") || cleanLog.toLowerCase().includes("compiled successfully") || cleanLog.toLowerCase().includes("ready in")) {
+                    textClass = "text-emerald-400";
+                  } else if (cleanLog.startsWith("> ")) {
+                    textClass = "text-brand-400 font-semibold";
+                  }
 
-                return (
-                  <div key={index} className={`whitespace-pre-wrap ${textClass}`}>
-                    {cleanLog}
-                  </div>
-                );
-              })
+                  return (
+                    <div key={index} className={`whitespace-pre-wrap ${textClass}`}>
+                      {highlightText(cleanLog, searchQuery)}
+                    </div>
+                  );
+                })
             )}
             <div ref={terminalEndRef} />
           </div>

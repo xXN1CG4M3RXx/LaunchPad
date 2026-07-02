@@ -699,6 +699,22 @@ fn get_active_ports() -> Result<Vec<ActivePort>, String> {
 }
 
 #[tauri::command]
+fn save_log_file(default_name: String, content: String) -> Result<bool, String> {
+    let file_path = rfd::FileDialog::new()
+        .set_title("Log-Datei speichern")
+        .set_file_name(&default_name)
+        .add_filter("Log-Dateien", &["log", "txt"])
+        .save_file();
+
+    if let Some(path) = file_path {
+        std::fs::write(&path, content).map_err(|e| format!("Fehler beim Schreiben der Log-Datei: {}", e))?;
+        Ok(true)
+    } else {
+        Ok(false)
+    }
+}
+
+#[tauri::command]
 fn read_env_file(project_path: String) -> Result<Option<Vec<EnvEntry>>, String> {
     let env_path = std::path::PathBuf::from(&project_path).join(".env");
     if !env_path.exists() {
@@ -807,7 +823,8 @@ pub fn run() {
             get_active_ports,
             kill_process_by_pid,
             read_env_file,
-            save_env_file
+            save_env_file,
+            save_log_file
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
