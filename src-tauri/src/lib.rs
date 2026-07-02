@@ -797,6 +797,183 @@ fn save_env_file(project_path: String, entries: Vec<EnvEntry>) -> Result<(), Str
     Ok(())
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct DockerContainer {
+    pub id: String,
+    pub name: String,
+    pub image: String,
+    pub status: String,
+    pub ports: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct HttpResponse {
+    pub status: u16,
+    pub status_text: String,
+    pub headers: HashMap<String, String>,
+    pub body: String,
+    pub elapsed_ms: u64,
+    pub size_bytes: usize,
+}
+
+#[tauri::command]
+async fn get_docker_containers() -> Result<Vec<DockerContainer>, String> {
+    let mut cmd = std::process::Command::new("docker");
+    cmd.args(&["ps", "-a", "--format", "{{.ID}}|{{.Names}}|{{.Image}}|{{.Status}}|{{.Ports}}"]);
+
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+
+    let output = cmd.output().map_err(|e| format!("Fehler beim Ausführen von docker ps: {}", e))?;
+    if !output.status.success() {
+        return Err("Docker-Dienst läuft eventuell nicht oder ist nicht installiert".to_string());
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let mut containers = Vec::new();
+    for line in stdout.lines() {
+        let parts: Vec<&str> = line.split('|').collect();
+        if parts.len() >= 4 {
+            containers.push(DockerContainer {
+                id: parts[0].trim().to_string(),
+                name: parts[1].trim().to_string(),
+                image: parts[2].trim().to_string(),
+                status: parts[3].trim().to_string(),
+                ports: parts.get(4).unwrap_or(&"").trim().to_string(),
+            });
+        }
+    }
+    Ok(containers)
+}
+
+#[tauri::command]
+async fn manage_docker_container(id: String, action: String) -> Result<(), String> {
+    let mut cmd = std::process::Command::new("docker");
+    match action.as_str() {
+        "start" => cmd.args(&["start", &id]),
+        "stop" => cmd.args(&["stop", &id]),
+        "restart" => cmd.args(&["restart", &id]),
+        _ => return Err("Ungültige Docker-Aktion".to_string()),
+    };
+
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+
+    let output = cmd.output().map_err(|e| format!("Fehler bei Docker-Aktion: {}", e))?;
+    if !output.status.success() {
+        let error_msg = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("Docker-Aktion fehlgeschlagen: {}", error_msg.trim()));
+    }
+    Ok(())
+}
+
+#[tauri::command]
+async fn get_docker_logs(id: String, tail: Option<usize>) -> Result<String, String> {
+    let mut cmd = std::process::Command::new("docker");
+    let tail_str = tail.unwrap_or(100).to_string();
+    cmd.args(&["logs", "--tail", &tail_str, &id]);
+
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+
+    let output = cmd.output().map_err(|e| format!("Fehler beim Laden der Docker-Logs: {}", e))?;
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    
+    let mut merged = String::new();
+    if !stdout.is_empty() {
+        merged.push_str(&stdout);
+    }
+    if !stderr.is_empty() {
+        if !merged.is_empty() && !merged.ends_with('\n') {
+            merged.push('\n');
+        }
+        merged.push_str(&stderr);
+    }
+    Ok(merged)
+}
+
+#[tauri::command]
+async fn send_http_request(
+    method: String,
+    url: String,
+    headers: Vec<(String, String)>,
+    body: Option<String>,
+) -> Result<HttpResponse, String> {
+    use reqwest::header::{HeaderName, HeaderValue, HeaderMap};
+    use std::time::Instant;
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()
+        .map_err(|e| format!("Fehler beim Erstellen des HTTP-Clients: {}", e))?;
+
+    let req_method = match method.to_uppercase().as_str() {
+        "GET" => reqwest::Method::GET,
+        "POST" => reqwest::Method::POST,
+        "PUT" => reqwest::Method::PUT,
+        "DELETE" => reqwest::Method::DELETE,
+        "PATCH" => reqwest::Method::PATCH,
+        "HEAD" => reqwest::Method::HEAD,
+        "OPTIONS" => reqwest::Method::OPTIONS,
+        _ => return Err(format!("Ungültige HTTP-Methode: {}", method)),
+    };
+
+    let mut req_builder = client.request(req_method, &url);
+
+    let mut req_headers = HeaderMap::new();
+    for (k, v) in headers {
+        if let Ok(name) = HeaderName::from_bytes(k.as_bytes()) {
+            if let Ok(val) = HeaderValue::from_str(&v) {
+                req_headers.insert(name, val);
+            }
+        }
+    }
+    req_builder = req_builder.headers(req_headers);
+
+    if let Some(b) = body {
+        if !b.is_empty() && method.to_uppercase() != "GET" && method.to_uppercase() != "HEAD" {
+            req_builder = req_builder.body(b);
+        }
+    }
+
+    let start = Instant::now();
+    let res = req_builder.send().await.map_err(|e| format!("HTTP-Anfrage fehlgeschlagen: {}", e))?;
+    let elapsed = start.elapsed().as_millis() as u64;
+
+    let status = res.status().as_u16();
+    let status_text = res.status().canonical_reason().unwrap_or("Unknown").to_string();
+
+    let mut res_headers = HashMap::new();
+    for (name, val) in res.headers().iter() {
+        let name_str = name.as_str().to_string();
+        if let Ok(val_str) = val.to_str() {
+            res_headers.insert(name_str, val_str.to_string());
+        }
+    }
+
+    let body_text = res.text().await.unwrap_or_default();
+    let size_bytes = body_text.len();
+
+    Ok(HttpResponse {
+        status,
+        status_text,
+        headers: res_headers,
+        body: body_text,
+        elapsed_ms: elapsed,
+        size_bytes,
+    })
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -824,7 +1001,11 @@ pub fn run() {
             kill_process_by_pid,
             read_env_file,
             save_env_file,
-            save_log_file
+            save_log_file,
+            get_docker_containers,
+            manage_docker_container,
+            get_docker_logs,
+            send_http_request
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

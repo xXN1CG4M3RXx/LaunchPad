@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
-import { Rocket, FolderKanban, Settings as SettingsIcon, Terminal, FileCode, CheckCircle2, Plug } from "lucide-react";
+import { Rocket, FolderKanban, Settings as SettingsIcon, Terminal, FileCode, CheckCircle2, Plug, Database, Globe } from "lucide-react";
 
 import { AppConfig, ProjectInfo } from "./types";
 import { Dashboard } from "./components/Dashboard";
@@ -10,9 +10,11 @@ import { ConsoleDrawer } from "./components/ConsoleDrawer";
 import { ProjectDetails } from "./components/ProjectDetails";
 import { Scripts } from "./components/Scripts";
 import { PortsManager } from "./components/PortsManager";
+import { DockerManager } from "./components/DockerManager";
+import { ApiClient } from "./components/ApiClient";
 
 function App() {
-  const [activeTab, setActiveTab] = useState<"dashboard" | "settings" | "scripts" | "ports">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "settings" | "scripts" | "ports" | "docker" | "api-client">("dashboard");
   const [config, setConfig] = useState<AppConfig>({
     dev_dir: null,
     scan_depth: 2,
@@ -331,6 +333,30 @@ function App() {
           </button>
 
           <button
+            onClick={() => setActiveTab("docker")}
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all active:scale-[0.98] ${
+              activeTab === "docker"
+                ? "bg-brand-600 text-white shadow-md shadow-brand-900/10"
+                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+            }`}
+          >
+            <Database className="w-4.5 h-4.5" />
+            <span>Docker</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("api-client")}
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all active:scale-[0.98] ${
+              activeTab === "api-client"
+                ? "bg-brand-600 text-white shadow-md shadow-brand-900/10"
+                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+            }`}
+          >
+            <Globe className="w-4.5 h-4.5" />
+            <span>API Client</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab("scripts")}
             className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all active:scale-[0.98] ${
               activeTab === "scripts"
@@ -436,6 +462,10 @@ function App() {
                 isScanning={isScanning}
               />
             )
+          ) : activeTab === "docker" ? (
+            <DockerManager />
+          ) : activeTab === "api-client" ? (
+            <ApiClient projects={projects} config={config} />
           ) : activeTab === "scripts" ? (
             <Scripts
               config={config}

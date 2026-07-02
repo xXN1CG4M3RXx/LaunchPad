@@ -54,3 +54,20 @@ export interface GitDetails {
   last_commit: string | null;
   has_changes: boolean;
 }
+
+export interface DockerContainer {
+  id: string;
+  name: string;
+  image: string;
+  status: string;
+  ports: string;
+}
+
+export interface HttpResponse {
+  status: number;
+  status_text: string;
+  headers: Record<string, string>;
+  body: string;
+  elapsed_ms: number;
+  size_bytes: number;
+}
