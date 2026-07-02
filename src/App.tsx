@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
-import { Rocket, FolderKanban, Settings as SettingsIcon, Terminal, FileCode } from "lucide-react";
+import { Rocket, FolderKanban, Settings as SettingsIcon, Terminal, FileCode, CheckCircle2, Plug } from "lucide-react";
 
 import { AppConfig, ProjectInfo } from "./types";
 import { Dashboard } from "./components/Dashboard";
@@ -9,9 +9,10 @@ import { Settings } from "./components/Settings";
 import { ConsoleDrawer } from "./components/ConsoleDrawer";
 import { ProjectDetails } from "./components/ProjectDetails";
 import { Scripts } from "./components/Scripts";
+import { PortsManager } from "./components/PortsManager";
 
 function App() {
-  const [activeTab, setActiveTab] = useState<"dashboard" | "settings" | "scripts">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "settings" | "scripts" | "ports">("dashboard");
   const [config, setConfig] = useState<AppConfig>({
     dev_dir: null,
     scan_depth: 2,
@@ -32,6 +33,15 @@ function App() {
   // Console Drawer state
   const [consoleOpen, setConsoleOpen] = useState(false);
   const [consoleProject, setConsoleProject] = useState<{ name: string; path: string } | null>(null);
+
+  // Toast notifications state
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const showToast = (message: string) => {
+    setToastMessage(message);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 3000);
+  };
 
   const handleSendStdin = async (projectPath: string, text: string) => {
     // Append command prompt log locally in stdout log immediately to maintain correct stream ordering
@@ -230,6 +240,11 @@ function App() {
 
   // Trigger project start
   const handleStartProject = async (projectPath: string, command: string) => {
+    const isCurrentlyRunning = runningProjects[projectPath];
+    if (isCurrentlyRunning) {
+      showToast("Stopping active server to run action...");
+    }
+
     // Clear logs from previous runs
     setProjectLogs((prev) => ({
       ...prev,
@@ -328,6 +343,18 @@ function App() {
           </button>
 
           <button
+            onClick={() => setActiveTab("ports")}
+            className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all active:scale-[0.98] ${
+              activeTab === "ports"
+                ? "bg-brand-600 text-white shadow-md shadow-brand-900/10"
+                : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+            }`}
+          >
+            <Plug className="w-4.5 h-4.5" />
+            <span>Ports</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab("settings")}
             className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all active:scale-[0.98] ${
               activeTab === "settings"
@@ -376,7 +403,7 @@ function App() {
 
       {/* Main panel area */}
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-brand-50/30 dark:bg-slate-900/50">
-        <div className="flex-1 overflow-y-auto overflow-x-hidden px-8 py-8">
+        <div className={`flex-1 ${selectedProject ? "overflow-hidden flex flex-col" : "overflow-y-auto"} overflow-x-hidden px-8 py-8`}>
           {activeTab === "dashboard" ? (
             selectedProject ? (
               <ProjectDetails
@@ -418,6 +445,8 @@ function App() {
               onStopScript={handleStopProject}
               onOpenConsole={handleOpenConsole}
             />
+          ) : activeTab === "ports" ? (
+            <PortsManager />
           ) : (
             <Settings config={config} onSaveConfig={handleSaveConfig} />
           )}
@@ -437,6 +466,14 @@ function App() {
           onStop={() => handleStopProject(consoleProject.path)}
           onSendInput={(text) => handleSendStdin(consoleProject.path, text)}
         />
+      )}
+
+      {/* Floating Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 bg-brand-600 text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-xl shadow-brand-500/10 border border-brand-500/20 animate-toast z-50 flex items-center space-x-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+          <span>{toastMessage}</span>
+        </div>
       )}
 
     </div>

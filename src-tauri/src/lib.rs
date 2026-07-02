@@ -12,11 +12,26 @@ pub struct ScriptConfig {
     pub command: String,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct ProjectScript {
+    pub name: String,
+    pub command: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct ActivePort {
+    pub port: u16,
+    pub pid: u32,
+    pub process_name: String,
+}
+
 // Structure for per-project configurations
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ProjectConfig {
     pub custom_command: Option<String>,
     pub is_pinned: bool,
+    pub custom_scripts: Option<Vec<ProjectScript>>,
+    pub target_port: Option<u16>,
 }
 
 // Global application configuration structure
@@ -447,6 +462,12 @@ fn stop_project(
 }
 
 #[tauri::command]
+fn kill_process_by_pid(pid: u32) -> Result<(), String> {
+    kill_process_tree(pid);
+    Ok(())
+}
+
+#[tauri::command]
 fn is_project_running(
     state: tauri::State<'_, ProcessState>,
     project_path: String,
@@ -583,6 +604,94 @@ fn get_system_info() -> SystemInfo {
     }
 }
 
+#[tauri::command]
+fn get_active_ports() -> Result<Vec<ActivePort>, String> {
+    #[cfg(windows)]
+    {
+        // 1. Build a map of PID -> Process Name using tasklist
+        let mut process_map = HashMap::new();
+        let mut tasklist_cmd = std::process::Command::new("tasklist");
+        tasklist_cmd.args(&["/FO", "CSV", "/NH"]);
+
+        use std::os::windows::process::CommandExt;
+        tasklist_cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+
+        if let Ok(output) = tasklist_cmd.output() {
+            if output.status.success() {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                for line in stdout.lines() {
+                    let parts: Vec<&str> = line.split("\",\"").collect();
+                    if parts.len() >= 2 {
+                        let image_name = parts[0].trim_start_matches('"').to_string();
+                        let pid_str = parts[1].trim_end_matches('"').trim();
+                        if let Ok(pid) = pid_str.parse::<u32>() {
+                            process_map.insert(pid, image_name);
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. Parse netstat -ano to find active TCP listeners
+        let mut netstat_cmd = std::process::Command::new("netstat");
+        netstat_cmd.args(&["-ano"]);
+
+        netstat_cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+
+        let output = netstat_cmd.output().map_err(|e| format!("Fehler beim Ausführen von netstat: {}", e))?;
+        if !output.status.success() {
+            return Err("netstat-Befehl fehlgeschlagen".to_string());
+        }
+
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let mut raw_ports = Vec::new();
+
+        for line in stdout.lines() {
+            let tokens: Vec<&str> = line.split_whitespace().collect();
+            if tokens.len() >= 5 {
+                let proto = tokens[0];
+                let local_addr = tokens[1];
+                let state = tokens[3];
+                let pid_str = tokens[4];
+
+                if proto == "TCP" && state == "LISTENING" {
+                    if let Some(port_idx) = local_addr.rfind(':') {
+                        let port_str = &local_addr[port_idx + 1..];
+                        if let Ok(port) = port_str.parse::<u16>() {
+                            if let Ok(pid) = pid_str.parse::<u32>() {
+                                let process_name = process_map.get(&pid).cloned().unwrap_or_else(|| "Unbekannt".to_string());
+                                raw_ports.push(ActivePort {
+                                    port,
+                                    pid,
+                                    process_name,
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Sort and deduplicate by port number
+        raw_ports.sort_by_key(|p| p.port);
+        let mut seen_ports = std::collections::HashSet::new();
+        let mut active_ports = Vec::new();
+
+        for ap in raw_ports {
+            if seen_ports.insert(ap.port) {
+                active_ports.push(ap);
+            }
+        }
+
+        Ok(active_ports)
+    }
+
+    #[cfg(not(windows))]
+    {
+        Ok(Vec::new())
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -605,7 +714,9 @@ pub fn run() {
             open_in_explorer,
             get_system_info,
             get_git_details,
-            open_in_browser
+            open_in_browser,
+            get_active_ports,
+            kill_process_by_pid
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

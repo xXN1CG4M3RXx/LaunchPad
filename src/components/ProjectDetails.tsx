@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { 
   ChevronLeft, Play, Square, Code, Folder, 
-  Terminal, Trash2, Copy, GitBranch, AlertCircle, CheckCircle2, RefreshCw, Globe
+  Terminal, Trash2, Copy, GitBranch, AlertCircle, CheckCircle2, RefreshCw, Globe,
+  Plus, Edit2, AlertTriangle
 } from "lucide-react";
-import { ProjectInfo, AppConfig, GitDetails } from "../types";
+import { ProjectInfo, AppConfig, GitDetails, ActivePort } from "../types";
 import { invoke } from "@tauri-apps/api/core";
 import { stripAnsi } from "../utils";
 
@@ -34,9 +35,159 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
   const [loadingGit, setLoadingGit] = useState(false);
   const [editingCommand, setEditingCommand] = useState(false);
   const [tempCommand, setTempCommand] = useState("");
+
+  const [isEditingPort, setIsEditingPort] = useState(false);
+  const [targetPortInput, setTargetPortInput] = useState("");
+  const [activePorts, setActivePorts] = useState<ActivePort[]>([]);
+  const [isFreeingPort, setIsFreeingPort] = useState(false);
+
+  const checkActivePorts = async () => {
+    try {
+      const list = await invoke<ActivePort[]>("get_active_ports");
+      setActivePorts(list);
+    } catch (e) {
+      console.error("Failed to load active ports:", e);
+    }
+  };
+
+  useEffect(() => {
+    checkActivePorts();
+    const timer = setInterval(checkActivePorts, 5000);
+    return () => clearInterval(timer);
+  }, [project.path]);
+
+  const activeCommand = config.projects[project.path]?.custom_command || project.default_command;
+
+  const detectedPort = useMemo(() => {
+    const configPort = config.projects[project.path]?.target_port;
+    if (configPort) return configPort;
+
+    const portRegex = /\b([1-9]\d{3,4})\b/;
+    const match = activeCommand.match(portRegex);
+    if (match) {
+      const p = parseInt(match[1], 10);
+      if (p >= 1024 && p <= 65535) return p;
+    }
+
+    switch (project.project_type) {
+      case "Node":
+        return 3000;
+      case "Python":
+        return 8000;
+      case "Java":
+      case "Go":
+      case "Rust":
+        return 8080;
+      case "Static":
+        return 3000;
+      default:
+        return null;
+    }
+  }, [project, activeCommand, config.projects]);
+
+  const portOccupyingProcess = useMemo(() => {
+    if (!detectedPort) return null;
+    return activePorts.find((ap) => ap.port === detectedPort) || null;
+  }, [detectedPort, activePorts]);
+
+  const handleFreeProjectPort = async () => {
+    if (!portOccupyingProcess) return;
+    setIsFreeingPort(true);
+    try {
+      await invoke("kill_process_by_pid", { pid: portOccupyingProcess.pid });
+      await checkActivePorts();
+    } catch (e) {
+      console.error("Failed to free port:", e);
+    } finally {
+      setIsFreeingPort(false);
+    }
+  };
+
+  const handleEditPort = () => {
+    setTargetPortInput(config.projects[project.path]?.target_port?.toString() || "");
+    setIsEditingPort(true);
+  };
+
+  const handleSaveTargetPort = () => {
+    const projectConf = config.projects[project.path] || { custom_command: null, is_pinned: false };
+    const pVal = targetPortInput.trim() ? parseInt(targetPortInput.trim(), 10) : null;
+    const updatedProjects = {
+      ...config.projects,
+      [project.path]: {
+        ...projectConf,
+        target_port: pVal && !isNaN(pVal) ? pVal : null,
+      },
+    };
+    onSaveConfig({
+      ...config,
+      projects: updatedProjects,
+    });
+    setIsEditingPort(false);
+  };
   const [copiedLogs, setCopiedLogs] = useState(false);
   const terminalEndRef = useRef<HTMLDivElement>(null);
+  const consoleContainerRef = useRef<HTMLDivElement>(null);
   const [autoScroll, setAutoScroll] = useState(true);
+
+  // Custom project actions state
+  const [isAddingScript, setIsAddingScript] = useState(false);
+  const [newScriptName, setNewScriptName] = useState("");
+  const [newScriptCommand, setNewScriptCommand] = useState("");
+  const [editingScriptIndex, setEditingScriptIndex] = useState<number | null>(null);
+  const [editScriptName, setEditScriptName] = useState("");
+  const [editScriptCommand, setEditScriptCommand] = useState("");
+
+  const handleSaveScripts = (scripts: { name: string; command: string }[]) => {
+    const projectConf = config.projects[project.path] || { custom_command: null, is_pinned: false };
+    const updatedProjects = {
+      ...config.projects,
+      [project.path]: {
+        ...projectConf,
+        custom_scripts: scripts,
+      },
+    };
+    onSaveConfig({
+      ...config,
+      projects: updatedProjects,
+    });
+  };
+
+  const handleAddScript = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newScriptName.trim() || !newScriptCommand.trim()) return;
+    const projectConf = config.projects[project.path] || { custom_command: null, is_pinned: false };
+    const currentScripts = projectConf.custom_scripts || [];
+    const updatedScripts = [
+      ...currentScripts,
+      { name: newScriptName.trim(), command: newScriptCommand.trim() }
+    ];
+    handleSaveScripts(updatedScripts);
+    setNewScriptName("");
+    setNewScriptCommand("");
+    setIsAddingScript(false);
+  };
+
+  const handleDeleteScript = (index: number) => {
+    const projectConf = config.projects[project.path] || { custom_command: null, is_pinned: false };
+    const currentScripts = projectConf.custom_scripts || [];
+    const updatedScripts = currentScripts.filter((_, i) => i !== index);
+    handleSaveScripts(updatedScripts);
+  };
+
+  const handleStartEditScript = (index: number, name: string, command: string) => {
+    setEditingScriptIndex(index);
+    setEditScriptName(name);
+    setEditScriptCommand(command);
+  };
+
+  const handleSaveEditScript = (index: number) => {
+    if (!editScriptName.trim() || !editScriptCommand.trim()) return;
+    const projectConf = config.projects[project.path] || { custom_command: null, is_pinned: false };
+    const currentScripts = [...(projectConf.custom_scripts || [])];
+    currentScripts[index] = { name: editScriptName.trim(), command: editScriptCommand.trim() };
+    handleSaveScripts(currentScripts);
+    setEditingScriptIndex(null);
+  };
 
   const getProjectTypeIcon = (type: string) => {
     switch (type) {
@@ -120,8 +271,9 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
 
   // Scroll terminal logs to bottom
   useEffect(() => {
-    if (autoScroll && terminalEndRef.current) {
-      terminalEndRef.current.scrollIntoView({ behavior: "smooth" });
+    if (autoScroll && consoleContainerRef.current) {
+      const container = consoleContainerRef.current;
+      container.scrollTop = container.scrollHeight;
     }
   }, [logs, autoScroll]);
 
@@ -147,8 +299,6 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
       }
     }
   };
-
-  const activeCommand = config.projects[project.path]?.custom_command || project.default_command;
 
   const handleEditCommand = () => {
     setTempCommand(activeCommand);
@@ -196,10 +346,10 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="flex-1 flex flex-col min-h-0 space-y-6 animate-in fade-in duration-300">
       
       {/* Header Navigation */}
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/5 pb-4">
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/5 pb-4 shrink-0">
         <button
           onClick={onBack}
           className="flex items-center space-x-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 font-semibold text-sm transition-colors"
@@ -239,10 +389,10 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
       </div>
 
       {/* Detail Content Grid split */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-8 min-h-0">
         
         {/* Left Column: Project Stats and Configurations */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6 overflow-y-auto pr-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
           <div className="bg-white dark:bg-slate-900/30 rounded-xl border border-slate-200 dark:border-white/5 p-6 shadow-sm space-y-6 relative overflow-hidden">
             <div className="absolute top-0 left-0 right-0 h-[3px] brand-gradient-bg"></div>
             
@@ -271,6 +421,25 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
 
             {/* Run Button controls */}
             <div className="pt-2 space-y-3">
+              {portOccupyingProcess && !isRunning && (
+                <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-start justify-between gap-3 text-xs text-amber-700 dark:text-amber-400">
+                  <div className="flex items-start space-x-2">
+                    <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                    <div>
+                      <p className="font-bold">Port {detectedPort} occupied</p>
+                      <p className="text-[10px] opacity-80 mt-0.5">Held by {portOccupyingProcess.process_name} (PID {portOccupyingProcess.pid})</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleFreeProjectPort}
+                    disabled={isFreeingPort}
+                    className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500 hover:text-white rounded text-[10px] font-bold transition-all shrink-0 active:scale-95"
+                  >
+                    {isFreeingPort ? "Freeing..." : "Free Port"}
+                  </button>
+                </div>
+              )}
+
               {isRunning ? (
                 <>
                   <button
@@ -347,6 +516,198 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
                 </div>
               )}
             </div>
+
+            {/* Target Port Configuration */}
+            <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-white/5">
+              <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Target Port</label>
+              {isEditingPort ? (
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={targetPortInput}
+                    onChange={(e) => setTargetPortInput(e.target.value)}
+                    className="w-full text-xs font-mono bg-slate-55 dark:bg-slate-950/80 border border-brand-400 dark:border-brand-700 rounded-lg px-3 py-2 text-slate-800 dark:text-slate-200 outline-none ring-1 ring-brand-300 dark:ring-brand-900"
+                    placeholder="e.g. 3000 (leave blank to auto-detect)"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSaveTargetPort();
+                      if (e.key === "Escape") setIsEditingPort(false);
+                    }}
+                    autoFocus
+                  />
+                  <div className="flex justify-end space-x-2">
+                    <button
+                      onClick={() => setIsEditingPort(false)}
+                      className="px-3 py-1 text-xs text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded font-semibold"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSaveTargetPort}
+                      className="px-3 py-1 text-xs bg-brand-600 text-white rounded font-bold hover:bg-brand-700"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div 
+                  onClick={handleEditPort}
+                  className="group flex items-center justify-between text-xs font-mono bg-slate-55 dark:bg-slate-950/40 border border-slate-200 dark:border-white/5 hover:border-brand-300 dark:hover:border-brand-850 text-slate-600 dark:text-slate-300 rounded-lg px-3 py-2.5 cursor-pointer transition-all"
+                >
+                  <span className="truncate pr-2">{config.projects[project.path]?.target_port || `Auto-detected: ${detectedPort}`}</span>
+                  <span className="text-[9px] text-slate-400 font-sans uppercase tracking-wider font-bold shrink-0 group-hover:text-brand-500">Edit</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Custom Actions Card */}
+          <div className="bg-white dark:bg-slate-900/30 rounded-xl border border-slate-200 dark:border-white/5 p-6 shadow-sm space-y-4 relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-[2px] brand-gradient-bg"></div>
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                <Code className="w-4 h-4 text-slate-400" />
+                <span>Custom Actions</span>
+              </h3>
+              {!isAddingScript && (
+                <button
+                  onClick={() => setIsAddingScript(true)}
+                  className="flex items-center space-x-1 text-[10px] font-bold text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 uppercase tracking-wide transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Action</span>
+                </button>
+              )}
+            </div>
+
+            {/* List of Custom Actions */}
+            <div className="space-y-2">
+              {!(config.projects[project.path]?.custom_scripts?.length) && !isAddingScript && (
+                <p className="text-xs text-slate-400 dark:text-slate-500 py-2">No custom actions defined yet. Add commands like test, build, lint, etc.</p>
+              )}
+
+              {(config.projects[project.path]?.custom_scripts || []).map((script, idx) => (
+                <div key={idx} className="flex flex-col p-3 bg-slate-50 dark:bg-slate-950/40 rounded-lg border border-slate-100 dark:border-white/5 space-y-2">
+                  {editingScriptIndex === idx ? (
+                    <div className="space-y-2">
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase">Action Name</label>
+                        <input
+                          type="text"
+                          value={editScriptName}
+                          onChange={(e) => setEditScriptName(e.target.value)}
+                          className="w-full text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded px-2.5 py-1.5 text-slate-800 dark:text-slate-200 outline-none focus:border-brand-500"
+                          placeholder="e.g. Test"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase">Command</label>
+                        <input
+                          type="text"
+                          value={editScriptCommand}
+                          onChange={(e) => setEditScriptCommand(e.target.value)}
+                          className="w-full text-xs font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded px-2.5 py-1.5 text-slate-800 dark:text-slate-200 outline-none focus:border-brand-500"
+                          placeholder="e.g. npm run test"
+                        />
+                      </div>
+                      <div className="flex justify-end space-x-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setEditingScriptIndex(null)}
+                          className="px-2.5 py-1 text-[10px] text-slate-550 hover:bg-slate-150 dark:hover:bg-slate-800 rounded font-semibold"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSaveEditScript(idx)}
+                          className="px-2.5 py-1 text-[10px] bg-brand-600 text-white rounded font-bold hover:bg-brand-700"
+                        >
+                          Save
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <div className="min-w-0 flex-1 pr-3">
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-200 block truncate">{script.name}</span>
+                        <code className="text-[10px] font-mono text-slate-450 dark:text-slate-550 truncate block mt-0.5">{script.command}</code>
+                      </div>
+                      <div className="flex items-center space-x-1.5 shrink-0">
+                        <button
+                          onClick={() => onStart(project.path, script.command)}
+                          className="p-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-lg border border-emerald-500/20 transition-all active:scale-95"
+                          title={`Run action: ${script.name}`}
+                        >
+                          <Play className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleStartEditScript(idx, script.name, script.command)}
+                          className="p-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800/40 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-lg border border-slate-200 dark:border-white/5 transition-all"
+                          title="Edit action"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteScript(idx)}
+                          className="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-lg border border-rose-500/20 transition-all"
+                          title="Delete action"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* Add New Action Form */}
+              {isAddingScript && (
+                <form onSubmit={handleAddScript} className="p-3 bg-slate-50 dark:bg-slate-950/40 rounded-lg border border-brand-500/25 dark:border-brand-500/15 space-y-3 mt-2">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Action Name</label>
+                    <input
+                      type="text"
+                      value={newScriptName}
+                      onChange={(e) => setNewScriptName(e.target.value)}
+                      className="w-full text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded px-2.5 py-1.5 text-slate-800 dark:text-slate-200 outline-none focus:border-brand-500"
+                      placeholder="e.g. Build, Test, Lint"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Command</label>
+                    <input
+                      type="text"
+                      value={newScriptCommand}
+                      onChange={(e) => setNewScriptCommand(e.target.value)}
+                      className="w-full text-xs font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded px-2.5 py-1.5 text-slate-800 dark:text-slate-200 outline-none focus:border-brand-500"
+                      placeholder="e.g. npm run build"
+                      required
+                    />
+                  </div>
+                  <div className="flex justify-end space-x-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAddingScript(false);
+                        setNewScriptName("");
+                        setNewScriptCommand("");
+                      }}
+                      className="px-2.5 py-1 text-[10px] text-slate-550 hover:bg-slate-200 dark:hover:bg-slate-800 rounded font-semibold"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-2.5 py-1 text-[10px] bg-brand-600 text-white rounded font-bold hover:bg-brand-700"
+                    >
+                      Add
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
           </div>
 
           {/* Git Inspection Details Card */}
@@ -415,7 +776,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
         </div>
 
         {/* Right Column: Embedded Console Log Output */}
-        <div className="lg:col-span-3 flex flex-col h-[600px] lg:h-auto bg-slate-950 rounded-xl border border-slate-900 text-slate-100 overflow-hidden shadow-sm relative">
+        <div className="lg:col-span-3 flex flex-col h-[500px] lg:h-full bg-slate-950 rounded-xl border border-slate-900 text-slate-100 overflow-hidden shadow-sm relative min-h-0">
           <div className="absolute top-0 left-0 right-0 h-[3px] brand-gradient-bg"></div>
           
           {/* Console Header */}
@@ -457,7 +818,7 @@ export const ProjectDetails: React.FC<ProjectDetailsProps> = ({
           </div>
 
           {/* Console Output Area */}
-          <div className="flex-1 overflow-y-auto p-6 font-mono text-xs leading-relaxed space-y-1 select-text scrollbar-thin scrollbar-track-slate-950 scrollbar-thumb-slate-800">
+          <div ref={consoleContainerRef} className="flex-1 overflow-y-auto p-6 font-mono text-xs leading-relaxed space-y-1 select-text scrollbar-thin scrollbar-track-slate-950 scrollbar-thumb-slate-800">
             {logs.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-slate-500 space-y-2">
                 <div className="p-2.5 bg-slate-900 rounded-full border border-slate-850 text-slate-500">

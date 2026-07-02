@@ -1,6 +1,19 @@
+export interface ProjectScript {
+  name: string;
+  command: string;
+}
+
+export interface ActivePort {
+  port: number;
+  pid: number;
+  process_name: string;
+}
+
 export interface ProjectConfig {
   custom_command: string | null;
   is_pinned: boolean;
+  custom_scripts?: ProjectScript[];
+  target_port?: number | null;
 }
 
 export interface ScriptConfig {
